@@ -16,6 +16,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool? showToolBar;
   final double? elevation;
+  final double titlePadding;
   final double? leadingHeight;
   final double? leadingWidth;
   final Color? bgColor;
@@ -37,6 +38,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       this.showToolBar,
       this.elevation,
       this.bgColor,
+        this.titlePadding =0,
       this.systemUiOverlayStyle,
         this.iconPath,
         this.onPressed, this.spacing, this.leadingHeight, this.leadingWidth,
@@ -46,7 +48,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       titleSpacing:spacing?? 0,
-      backgroundColor: AppColors.white,
+      backgroundColor:bgColor ?? AppColors.white,
       leading: iconPath != null
           ? IconButton(
             onPressed: onPressed,
@@ -56,11 +58,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: elevation,
       systemOverlayStyle: systemUiOverlayStyle,
       scrolledUnderElevation: 0,
-      title: CustomText(
-        title: title ?? '',
-        fontSize: fontSize ?? AppFonts.font_18,
-        fontColor: fontColor??AppColors.black,
-        fontWeight: FontWeight.bold,
+      title: Padding(
+        padding: EdgeInsets.only(left:titlePadding),
+        child: CustomText(
+          title: title ?? '',
+          fontSize: fontSize ?? AppFonts.font_18,
+          fontColor: fontColor??AppColors.black,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       centerTitle: centerTitle??false,
       actions: actions,

@@ -16,6 +16,8 @@ dependencies:
   easy_localization: ^3.0.8
   flutter_svg: ^2.3.0
   cached_network_image: ^3.4.1
+  firebase_core: ^4.13.0
+  firebase_auth: ^6.5.7
 
 dev_dependencies:
   flutter_test:
@@ -29,6 +31,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+    - assets/icons/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

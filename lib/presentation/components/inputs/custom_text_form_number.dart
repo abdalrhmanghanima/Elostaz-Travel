@@ -25,6 +25,8 @@ class CustomTextFormFieldNumber extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(color: bgColor??AppColors.inputBg,borderRadius: BorderRadius.circular(borderRaduis??16.r)),
       child: TextFormField(
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.right,
         readOnly:readOnly ,
         controller: controller,
         validator: validator,

@@ -16,8 +16,11 @@ class CustomTextFormField extends StatelessWidget {
   final ValueChanged<String>? onChange;
   final FocusNode? focusNode;
   final void Function()? onTap;
+  final String? Function(String?)? validator;
+  final bool obscureText;
 
-  const CustomTextFormField({super.key,required this.controller,this.hint,this.prefix,this.suffix,this.textInputType ,this.readOnly = false,this.bgColor, this.onChange, this.borderRaduis, this.focusNode, this.onTap});
+
+  const CustomTextFormField({super.key,required this.controller,this.hint,this.prefix,this.suffix,this.textInputType ,this.readOnly = false,this.bgColor, this.onChange, this.borderRaduis, this.focusNode, this.onTap, this.validator, this.obscureText = false});
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +34,10 @@ class CustomTextFormField extends StatelessWidget {
         onTap: onTap,
         readOnly:readOnly ,
         controller: controller,
+        validator: validator,
+        obscureText: obscureText,
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.right,
         textAlignVertical: TextAlignVertical.center,
         cursorColor: AppColors.primary,
         style: AppTextStyles().normalText().textColorNormal(AppColors.black),
