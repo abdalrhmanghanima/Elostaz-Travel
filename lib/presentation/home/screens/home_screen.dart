@@ -19,6 +19,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final List<Widget> screens = [
     HomeTab(),
     BusTab(),
+    DriversTab(),
     NotificationsTab(),
     ProfileTab(),
   ];
@@ -103,6 +104,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               label: 'الأتوبيسات',
             ),
+            BottomNavigationBarItem(
+              icon: Transform.translate(
+                offset: Offset(0, -1.h),
+                child: SizedBox(
+                  height: 24.w,
+                  width: 24.w,
+                  child: SvgPicture.asset(
+                    AppIcons.person,
+                    colorFilter: ColorFilter.mode(
+                      currentScreen == 1
+                          ? AppColors.primary
+                          : AppColors.black,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+              label: 'السواقين',
+            ),
 
             BottomNavigationBarItem(
               icon: Transform.translate(
@@ -155,5 +175,13 @@ class ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(body: Center(child: Text('ProfileTab')));
+  }
+}
+class DriversTab extends StatelessWidget {
+  const DriversTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
   }
 }

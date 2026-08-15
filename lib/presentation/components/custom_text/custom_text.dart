@@ -22,24 +22,20 @@ class CustomText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return fontWeight == FontWeight.normal
-        ? Text(
-            title ?? '',
-            maxLines: maxLines,
-            overflow: maxLines != null ? TextOverflow.ellipsis : null,
-            style: AppTextStyles()
-                .normalText(fontSize: fontSize, decoration: decoration)
-                .textColorNormal(fontColor),
-            textAlign: textAlign,
-          )
-        : Text(
-            title ?? '',
-            maxLines: maxLines,
-            overflow: maxLines != null ? TextOverflow.ellipsis : null,
-            style: AppTextStyles()
-                .normalText(fontSize: fontSize)
-                .textColorBold(fontColor),
-            textAlign: textAlign,
-          );
+    return Text(
+      title ?? '',
+      maxLines: maxLines,
+      overflow: maxLines != null ? TextOverflow.ellipsis : null,
+      textAlign: textAlign,
+      style: AppTextStyles()
+          .normalText(
+        fontSize: fontSize,
+        decoration: decoration,
+      )
+          .copyWith(
+        color: fontColor,
+        fontWeight: fontWeight,
+      ),
+    );
   }
 }

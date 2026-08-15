@@ -1,16 +1,16 @@
 import 'package:elostaz_travel/core/extensions/extensions.dart';
-import 'package:elostaz_travel/presentation/components/custom_svg/custom_svg_icon.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:flutter/material.dart';
 
 class CustomValidTextContainer extends StatelessWidget {
   final String text;
   final Color backgroundColor;
+  final Color fontColor;
 
   const CustomValidTextContainer({
     super.key,
     required this.text,
-    required this.backgroundColor,
+    required this.backgroundColor, required this.fontColor,
   });
 
   @override
@@ -23,7 +23,7 @@ class CustomValidTextContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(24.r),
       ),
       alignment: Alignment.center,
-      child: CustomText(title: text),
+      child: CustomText(title: text,fontColor: fontColor,),
     );
   }
 }

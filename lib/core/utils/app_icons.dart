@@ -11,6 +11,15 @@ class AppIcons {
   static const String warning = 'assets/icons/warning.svg';
   static const String add = 'assets/icons/add.svg';
   static const String arrowBack = 'assets/icons/arrow_back.svg';
+  static const String arrowLeft = 'assets/icons/arrow_left.svg';
   static const String up = 'assets/icons/up.svg';
   static const String down = 'assets/icons/down.svg';
+  static const String busGray = 'assets/icons/bus_gray.svg';
+  static const String file = 'assets/icons/file.svg';
+  static const String save = 'assets/icons/save.svg';
+  static const String info = 'assets/icons/info.svg';
+  static const String plate = 'assets/icons/plate.svg';
+  static const String person = 'assets/icons/person.svg';
+  static const String trip = 'assets/icons/trip.svg';
+  static const String more = 'assets/icons/more.svg';
 }
