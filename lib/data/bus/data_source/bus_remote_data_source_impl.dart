@@ -65,27 +65,44 @@ class BusRemoteDataSourceImpl implements BusRemoteDataSource {
   }
 
   @override
-  Future<void> updateBus({required BusEntity bus}) async {
-    await _busesCollection
-        .doc(bus.id)
-        .update(
-          BusModel(
-            id: bus.id,
-            busName: bus.busName,
-            plateNumber: bus.plateNumber,
-            brand: bus.brand,
-            modelYear: bus.modelYear,
-            chassisNumber: bus.chassisNumber,
-            engineNumber: bus.engineNumber,
-            passengerCount: bus.passengerCount,
-            vehicleType: bus.vehicleType,
-            licenseExpiryDate: bus.licenseExpiryDate,
-            licenseImageUrl: bus.licenseImageUrl,
-            busImageUrl: bus.busImageUrl,
-            specialConditions: bus.specialConditions,
-            insuranceType: bus.insuranceType,
-          ).toFirestore(),
-        );
+  Future<void> updateBus({
+    required BusEntity bus,
+  }) async {
+    final docRef = _busesCollection.doc(bus.id);
+
+    final snapshot = await docRef.get();
+
+    final data = snapshot.data();
+
+    final oldExpiryDate =
+    data?['licenseExpiryDate'] is Timestamp
+        ? (data!['licenseExpiryDate'] as Timestamp).toDate()
+        : null;
+
+    final isLicenseDateChanged =
+        oldExpiryDate == null ||
+            oldExpiryDate.year != bus.licenseExpiryDate.year ||
+            oldExpiryDate.month != bus.licenseExpiryDate.month ||
+            oldExpiryDate.day != bus.licenseExpiryDate.day;
+
+    final updateData = <String, dynamic>{
+      'busName': bus.busName,
+      'licenseExpiryDate':
+      Timestamp.fromDate(bus.licenseExpiryDate),
+      'licenseImageUrl': bus.licenseImageUrl,
+      'busImageUrl': bus.busImageUrl,
+    };
+
+    if (isLicenseDateChanged) {
+      updateData['licenseNotificationFlags'] = {
+        '30': false,
+        '7': false,
+        '1': false,
+        'expired': false,
+      };
+    }
+
+    await docRef.update(updateData);
   }
 
   @override
