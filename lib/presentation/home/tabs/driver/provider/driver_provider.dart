@@ -32,7 +32,7 @@ final getDriversUseCaseProvider = Provider<GetDriversUseCase>((ref) {
 final addDriverUseCaseProvider =
 Provider<AddDriverUseCase>((ref) {
   return AddDriverUseCase(
-    repository: ref.read(driverRepositoryProvider),
+    ref.read(driverRepositoryProvider),
   );
 });
 

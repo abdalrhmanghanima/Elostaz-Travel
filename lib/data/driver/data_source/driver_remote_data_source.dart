@@ -5,6 +5,8 @@ abstract class DriverRemoteDataSource {
   Future<void> addDriver({
     required String name,
     required String phone,
+    required int tripsCount,
+    required double totalRevenue,
   });
   Future<void> deleteDriver(String driverId);
 }

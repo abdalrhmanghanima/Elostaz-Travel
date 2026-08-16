@@ -19,8 +19,9 @@ class DriverModel extends DriverEntity {
       id: document.id,
       name: data['name'] ?? '',
       phone: data['phone'] ?? '',
-      tripsCount: (data['tripsCount'] as num?)?.toInt() ?? 0,
-      totalRevenue: (data['totalRevenue'] as num?)?.toDouble() ?? 0.0,
+      tripsCount: (data['tripsCount'] ?? 0) as int,
+      totalRevenue:
+      (data['totalRevenue'] ?? 0).toDouble(),
     );
   }
 

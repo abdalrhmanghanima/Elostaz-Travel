@@ -18,6 +18,8 @@ class DriversNotifier extends AsyncNotifier<List<DriverEntity>> {
   Future<void> addDriver({
     required String name,
     required String phone,
+    required double totalRevenue,
+    required int tripsCount,
   }) async {
     state = const AsyncLoading();
 
@@ -25,6 +27,8 @@ class DriversNotifier extends AsyncNotifier<List<DriverEntity>> {
           () => ref.read(addDriverUseCaseProvider).call(
         name: name,
         phone: phone,
+        totalRevenue: totalRevenue,
+        tripsCount: tripsCount,
       ),
     );
 

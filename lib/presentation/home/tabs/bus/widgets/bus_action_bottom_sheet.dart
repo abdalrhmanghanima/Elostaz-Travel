@@ -1,10 +1,20 @@
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
+import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
+import 'package:elostaz_travel/domain/driver/entity/driver_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/add_trip_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 
 class BusActionsBottomSheet extends StatelessWidget {
-  const BusActionsBottomSheet({super.key});
+  const BusActionsBottomSheet({
+    super.key,
+    required this.drivers,
+    required this.bus
+  });
+
+  final List<DriverEntity> drivers;
+  final BusEntity bus;
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +37,28 @@ class BusActionsBottomSheet extends StatelessWidget {
             ),
 
             SizedBox(height: 20.h),
+
             InkWell(
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
 
-                // NavigatorHandler.push(AddTripScreen());
+                await Future.delayed(
+                  const Duration(milliseconds: 200),
+                );
+
+                if (!context.mounted) return;
+
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) {
+                    return AddTripBottomSheet(
+                      drivers: drivers,
+                      bus: bus,
+                    );
+                  },
+                );
               },
               child: Row(
                 children: [
@@ -63,7 +90,9 @@ class BusActionsBottomSheet extends StatelessWidget {
                 ],
               ),
             ),
+
             Divider(height: 20.h),
+
             InkWell(
               onTap: () {
                 Navigator.pop(context);
@@ -99,6 +128,7 @@ class BusActionsBottomSheet extends StatelessWidget {
                 ],
               ),
             ),
+
             SizedBox(height: 10.h),
           ],
         ),

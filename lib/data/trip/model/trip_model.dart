@@ -12,6 +12,7 @@ class TripModel extends TripEntity {
     required super.details,
     required super.revenue,
     required super.createdAt,
+    required super.expenses
   });
 
   factory TripModel.fromFirestore(
@@ -30,6 +31,7 @@ class TripModel extends TripEntity {
       revenue: double.tryParse(
         data['revenue']?.toString() ?? '',
       ) ?? 0,
+      expenses: (data['expenses'] ?? 0).toDouble(),
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -45,6 +47,7 @@ class TripModel extends TripEntity {
       'plateNumber': plateNumber,
       'details': details,
       'revenue': revenue,
+      'expenses': expenses,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }

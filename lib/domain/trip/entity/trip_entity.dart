@@ -8,6 +8,7 @@ class TripEntity {
   final String details;
   final double revenue;
   final DateTime createdAt;
+  final double expenses;
 
   const TripEntity({
     required this.id,
@@ -19,5 +20,6 @@ class TripEntity {
     required this.details,
     required this.revenue,
     required this.createdAt,
+    required this.expenses,
   });
 }

@@ -3,6 +3,7 @@ import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/presentation/home/provider/bottom_nav_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/bus_tab.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/driver_tab.dart';
 import 'package:elostaz_travel/presentation/home/tabs/home/home_tab.dart';
 import 'package:elostaz_travel/presentation/home/tabs/notifications/notifications_tab.dart';
 import 'package:flutter/material.dart';
@@ -177,11 +178,4 @@ class ProfileTab extends StatelessWidget {
     return const Scaffold(body: Center(child: Text('ProfileTab')));
   }
 }
-class DriversTab extends StatelessWidget {
-  const DriversTab({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}

@@ -33,6 +33,8 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   Future<void> addDriver({
     required String name,
     required String phone,
+    required int tripsCount,
+    required double totalRevenue,
   }) async {
     final user = auth.currentUser;
 
@@ -47,8 +49,8 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         .add({
       'name': name,
       'phone': phone,
-      'tripsCount': 0,
-      'totalRevenue': 0,
+      'tripsCount': tripsCount,
+      'totalRevenue': totalRevenue,
     });
   }
   @override

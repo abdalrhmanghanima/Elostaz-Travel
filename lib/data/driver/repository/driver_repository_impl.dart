@@ -17,10 +17,14 @@ class DriverRepositoryImpl implements DriverRepository {
   Future<void> addDriver({
     required String name,
     required String phone,
+    required int tripsCount,
+    required double totalRevenue,
   }) {
     return remoteDataSource.addDriver(
       name: name,
       phone: phone,
+      tripsCount: tripsCount,
+      totalRevenue: totalRevenue,
     );
   }
   @override

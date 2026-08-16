@@ -8,9 +8,16 @@ import 'package:elostaz_travel/core/utils/custom_loading.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
 import 'package:elostaz_travel/presentation/components/custom_asset_image/custom_asset_image.dart';
+import 'package:elostaz_travel/presentation/components/custom_button/custom_button.dart';
 import 'package:elostaz_travel/presentation/components/custom_svg/custom_svg_icon.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
-import 'package:elostaz_travel/presentation/home/tabs/widgets/bus_action_bottom_sheet.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/bus_trips_screen.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_action_bottom_sheet.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_monthly_report_service.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/delete_bus_bottom_sheet.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/widgets/custom_valid_text_container.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +32,8 @@ class BusDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tripsState = ref.watch(busTripsProvider(bus.id!));
     final bool isLicenseValid = bus.licenseExpiryDate.isAfter(DateTime.now());
+    final driversState = ref.watch(driversProvider);
+
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: CustomAppBar(
@@ -39,21 +48,57 @@ class BusDetailsScreen extends ConsumerWidget {
           NavigatorHandler.pop();
         },
         actions: [
-          InkWell(
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(24.r),
-                  ),
-                ),
-                builder: (_) => const BusActionsBottomSheet(),
+          IconButton(
+            onPressed: () {
+              tripsState.whenData(
+                    (trips) {
+                  BusMonthlyReportService
+                      .shareCurrentMonthReport(
+                    bus: bus,
+                    trips: trips,
+                  );
+                },
               );
             },
-            child: Padding(
-              padding: EdgeInsets.only(right: 12.w),
+            icon: Icon(
+              Icons.print_outlined,
+              color: AppColors.white,
+              size: 24.sp,
+            ),
+          ),
+          SizedBox(width: 4.w,),
+          Padding(
+            padding: EdgeInsets.only(right: 12.w),
+            child: InkWell(
+              onTap: () {
+                driversState.when(
+                  loading: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('جاري تحميل السواقين...')),
+                    );
+                  },
+                  error: (error, stackTrace) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('حدث خطأ أثناء تحميل السواقين'),
+                      ),
+                    );
+                  },
+                  data: (drivers) {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: AppColors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24.r),
+                        ),
+                      ),
+                      builder: (_) =>
+                          BusActionsBottomSheet(drivers: drivers, bus: bus),
+                    );
+                  },
+                );
+              },
               child: CustomSvgIcon(
                 assetName: AppIcons.more,
                 width: 20.w,
@@ -61,6 +106,7 @@ class BusDetailsScreen extends ConsumerWidget {
               ),
             ),
           ),
+
         ],
       ),
       body: SingleChildScrollView(
@@ -421,12 +467,17 @@ class BusDetailsScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  CustomText(
-                    title: "عرض الكل؟",
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16.sp,
-                    fontColor: AppColors.primary,
-                    decoration: TextDecoration.underline,
+                  InkWell(
+                    onTap: (){
+                      NavigatorHandler.push(BusTripsScreen(bus: bus));
+                    },
+                    child: CustomText(
+                      title: "عرض الكل؟",
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16.sp,
+                      fontColor: AppColors.primary,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                   Spacer(),
                   CustomText(
@@ -462,157 +513,72 @@ class BusDetailsScreen extends ConsumerWidget {
                         child: Text('لا توجد رحلات لهذا الأتوبيس'),
                       );
                     }
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: trips.length,
-                      itemBuilder: (context, index) {
-                        final trip = trips[index];
 
-                        return Container(
-                          width: double.infinity,
-                          margin: EdgeInsets.only(bottom: 14.h),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 18.w,
-                            vertical: 16.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(color: Colors.grey.shade200),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        CustomText(
-                                          title: "التاريخ",
-                                          fontSize: 17.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
+                    final displayedTrips = trips.take(3).toList();
 
-                                        SizedBox(height: 6.h),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: displayedTrips.length,
+                          itemBuilder: (context, index) {
+                            final trip = displayedTrips[index];
 
-                                        CustomText(
-                                          title:
-                                              '${trip.createdAt.day}-'
-                                              '${trip.createdAt.month}-'
-                                              '${trip.createdAt.year}',
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  SizedBox(width: 20.w),
-
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        CustomText(
-                                          title: "السائق",
-                                          fontSize: 17.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-
-                                        SizedBox(height: 6.h),
-
-                                        CustomText(
-                                          title: trip.driverName,
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w600,
-                                          textAlign: TextAlign.right,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              SizedBox(height: 14.h),
-
-                              Divider(
-                                height: 1,
-                                thickness: 1,
-                                color: Colors.grey.shade300,
-                              ),
-
-                              SizedBox(height: 14.h),
-
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        CustomText(
-                                          title: "الإيراد",
-                                          fontSize: 17.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-
-                                        SizedBox(height: 6.h),
-
-                                        CustomText(
-                                          title: '${trip.revenue} ج.م',
-                                          fontSize: 20.sp,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  SizedBox(width: 20.w),
-
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        CustomText(
-                                          title: "التفاصيل",
-                                          fontSize: 17.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-
-                                        SizedBox(height: 6.h),
-
-                                        CustomText(
-                                          title: trip.details,
-                                          fontSize: 17.sp,
-                                          fontWeight: FontWeight.w500,
-                                          textAlign: TextAlign.right,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                            return TripCard(
+                              trip: trip,
+                              busId: bus.id!,
+                            );
+                          },
+                        ),
+                      ],
                     );
                   },
                 ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(
+                left: 16.w,
+                right: 16.w,
+                bottom: 20.h,
+              ),
+              child: CustomButton(
+                title: "حذف العربية",
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24.r),
+                      ),
+                    ),
+                    builder: (_) {
+                      return DeleteBusBottomSheet(
+                        onDelete: () async {
+                          Navigator.pop(context);
+
+                          final success = await ref
+                              .read(busProvider.notifier)
+                              .deleteBus(
+                            busId: bus.id!,
+                          );
+
+                          if (!context.mounted) return;
+
+                          if (success) {
+                            NavigatorHandler.pop();
+                          }
+                        },
+                      );
+                    },
+                  );
+                },
+                bg: AppColors.red,
+                fontColor: AppColors.white,
+                fontSize: 18.sp,
               ),
             ),
           ],

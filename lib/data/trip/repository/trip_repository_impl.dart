@@ -20,6 +20,7 @@ class TripRepositoryImpl implements TripRepository {
       plateNumber: trip.plateNumber,
       details: trip.details,
       revenue: trip.revenue,
+      expenses: trip.expenses,
       createdAt: trip.createdAt,
     );
 

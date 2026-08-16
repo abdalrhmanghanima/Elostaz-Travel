@@ -47,15 +47,19 @@ class BusNotifier extends AsyncNotifier<List<BusEntity>> {
     });
   }
 
-  Future<void> deleteBus({
+  Future<bool> deleteBus({
     required String busId,
   }) async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       await _deleteBusUseCase(busId: busId);
       return await _getBusesUseCase();
     });
+
+    state = result;
+
+    return !result.hasError;
   }
 
   Future<BusEntity> getBus({

@@ -9,6 +9,7 @@ import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app
 import 'package:elostaz_travel/presentation/components/custom_asset_image/custom_asset_image.dart';
 import 'package:elostaz_travel/presentation/components/custom_svg/custom_svg_icon.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
+import 'package:elostaz_travel/presentation/components/inputs/custom_text_form.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/add_bus_screen.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/bus_details_screen.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
@@ -16,11 +17,26 @@ import 'package:elostaz_travel/presentation/home/tabs/widgets/custom_valid_text_
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BusTab extends ConsumerWidget {
+class BusTab extends ConsumerStatefulWidget {
   const BusTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BusTab> createState() => _BusTabState();
+}
+
+class _BusTabState extends ConsumerState<BusTab> {
+  final searchController = TextEditingController();
+
+  String searchQuery = '';
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final busesState = ref.watch(busProvider);
 
     return Scaffold(
@@ -40,7 +56,7 @@ class BusTab extends ConsumerWidget {
       ),
       body: Padding(
         padding: EdgeInsets.only(
-          top: 24.h,
+          top: 16.h,
           left: 16.w,
           right: 16.w,
         ),
@@ -55,21 +71,57 @@ class BusTab extends ConsumerWidget {
             ),
           ),
           data: (buses) {
-            if (buses.isEmpty) {
-              return const Center(
-                child: CustomText(
-                  title: "لا يوجد أتوبيسات",
+            final filteredBuses = buses.where((bus) {
+              final name = bus.busName.trim().toLowerCase();
+              final query = searchQuery.trim().toLowerCase();
+
+              return name.contains(query);
+            }).toList();
+
+            return Column(
+              children: [
+                CustomTextFormField(
+                  controller: searchController,
+                  hint: 'ابحث باسم الأتوبيس',
+                  prefix: Icon(
+                    Icons.search_rounded,
+                    size: 23.sp,
+                    color: const Color(0xFF777B85),
+                  ),
+                  onChange: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
                 ),
-              );
-            }
 
-            return ListView.builder(
-              itemCount: buses.length,
-              itemBuilder: (context, index) {
-                final bus = buses[index];
+                SizedBox(height: 16.h),
 
-                return _BusCard(bus: bus);
-              },
+                Expanded(
+                  child: buses.isEmpty
+                      ? const Center(
+                    child: CustomText(
+                      title: "لا يوجد أتوبيسات",
+                    ),
+                  )
+                      : filteredBuses.isEmpty
+                      ? const Center(
+                    child: CustomText(
+                      title: "لا يوجد أتوبيس بهذا الاسم",
+                    ),
+                  )
+                      : ListView.builder(
+                    itemCount: filteredBuses.length,
+                    itemBuilder: (context, index) {
+                      final bus = filteredBuses[index];
+
+                      return _BusCard(
+                        bus: bus,
+                      );
+                    },
+                  ),
+                ),
+              ],
             );
           },
         ),
