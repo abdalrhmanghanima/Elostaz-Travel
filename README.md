@@ -259,7 +259,7 @@ application.
 
 ## Splash Screen
 
-`<img src="assets/readme/splash.jpg" width="48%">`{=html}
+<img src="assets/readme/splash.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -267,7 +267,7 @@ application.
 
 ### Login
 
-`<img src="assets/readme/login.jpg" width="48%">`{=html}
+<img src="assets/readme/login.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -276,11 +276,11 @@ application.
 The home dashboard provides a quick overview of the most important
 operational information.
 
-`<img src="assets/readme/home.jpg" width="48%">`{=html}
+<img src="assets/readme/home.jpg" width="48%">
 
 ### Home --- Additional View
 
-`<img src="assets/readme/rest-of-home.jpg" width="48%">`{=html}
+<img src="assets/readme/rest-of-home.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -288,43 +288,43 @@ operational information.
 
 ### Bus Screen
 
-`<img src="assets/readme/bus-screen.jpg" width="48%">`{=html}
+<img src="assets/readme/bus-screen.jpg" width="48%">
 
 ### Add Bus Screen
 
-`<img src="assets/readme/add-bus-screen.jpg" width="48%">`{=html}
+<img src="assets/readme/add-bus-screen.jpg" width="48%">
 
 ### Add Bus --- Additional Section
 
-`<img src="assets/readme/rest-of-add-bus.jpg" width="48%">`{=html}
+<img src="assets/readme/rest-of-add-bus.jpg" width="48%">
 
 ### Add Bus --- Additional Section 2
 
-`<img src="assets/readme/rest-of-add-bus-sec.jpg" width="48%">`{=html}
+<img src="assets/readme/rest-of-add-bus-sec.jpg" width="48%">
 
 ### Add Bus Bottom Sheet
 
-`<img src="assets/readme/add-bus-bottom-sheet.jpg" width="48%">`{=html}
+<img src="assets/readme/add-bus-bottom-sheet.jpg" width="48%">
 
 ### Bus Details
 
-`<img src="assets/readme/bus-details.jpg" width="48%">`{=html}
+<img src="assets/readme/bus-details.jpg" width="48%">
 
 ### Bus Details --- Additional Section
 
-`<img src="assets/readme/rest-of-bus-details.jpg" width="48%">`{=html}
+<img src="assets/readme/rest-of-bus-details.jpg" width="48%">
 
 ### Bus Details --- Additional Section 2
 
-`<img src="assets/readme/rest-of-bus-details-sec.jpg" width="48%">`{=html}
+<img src="assets/readme/rest-of-bus-details-sec.jpg" width="48%">
 
 ### Edit Bus Bottom Sheet
 
-`<img src="assets/readme/edit-bus-bottom-sheet.jpg" width="48%">`{=html}
+<img src="assets/readme/edit-bus-bottom-sheet.jpg" width="48%">
 
 ### Add/Edit Bus Image Selection
 
-`<img src="assets/readme/add-edit-bus-bottom-sheet.jpg" width="48%">`{=html}
+<img src="assets/readme/add-edit-bus-bottom-sheet.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -332,15 +332,15 @@ operational information.
 
 ### Drivers Screen
 
-`<img src="assets/readme/drivers-screen.jpg" width="48%">`{=html}
+<img src="assets/readme/drivers-screen.jpg" width="48%">
 
 ### Add Driver Bottom Sheet
 
-`<img src="assets/readme/add-driver-bottom-sheet.jpg" width="48%">`{=html}
+<img src="assets/readme/add-driver-bottom-sheet.jpg" width="48%">
 
 ### Driver Details
 
-`<img src="assets/readme/driver-details.jpg" width="48%">`{=html}
+<img src="assets/readme/driver-details.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -348,7 +348,7 @@ operational information.
 
 ### Trips Screen
 
-`<img src="assets/readme/trips-screen.jpg" width="48%">`{=html}
+<img src="assets/readme/trips-screen.jpg" width="48%">
 
 Trip management connects operational records with the selected bus and
 driver and provides a history of recorded trips and their financial
@@ -360,11 +360,11 @@ values.
 
 ### All Notifications
 
-`<img src="assets/readme/all-notifications.jpg" width="48%">`{=html}
+<img src="assets/readme/all-notifications.jpg" width="48%">
 
 ### Ongoing Notifications
 
-`<img src="assets/readme/ongoing-notifications.jpg" width="48%">`{=html}
+<img src="assets/readme/ongoing-notifications.jpg" width="48%">
 
 The notification area provides a centralized place to review operational
 alerts and important vehicle-related reminders.
@@ -375,15 +375,15 @@ alerts and important vehicle-related reminders.
 
 ### Financial Summary
 
-`<img src="assets/readme/financial-summary.jpg" width="48%">`{=html}
+<img src="assets/readme/financial-summary.jpg" width="48%">
 
 ### Financial Summary --- Additional View
 
-`<img src="assets/readme/rest-of-financial-summary.jpg" width="48%">`{=html}
+<img src="assets/readme/rest-of-financial-summary.jpg" width="48%">
 
 ### Financial Summary Report
 
-`<img src="assets/readme/financial-summary-report.jpg" width="48%">`{=html}
+<img src="assets/readme/financial-summary-report.jpg" width="48%">
 
 The financial module organizes trip revenue into a clear structure,
 making it easier to understand the company's financial activity and
@@ -495,6 +495,51 @@ This helps keep screens consistent and reduces duplicated UI code.
 
 ------------------------------------------------------------------------
 
+# 🚀 Getting Started
+
+## Prerequisites
+
+Make sure the following are installed:
+
+-   Flutter SDK
+-   Dart SDK
+-   Android Studio or another Flutter-compatible IDE
+-   Android SDK
+-   Git
+
+Check your Flutter installation:
+
+``` bash
+flutter doctor
+```
+
+------------------------------------------------------------------------
+
+## Installation
+
+Clone the repository:
+
+``` bash
+git clone <YOUR_REPOSITORY_URL>
+```
+
+Navigate to the project:
+
+``` bash
+cd elostaz_travel
+```
+
+Install dependencies:
+
+``` bash
+flutter pub get
+```
+
+Run the application:
+
+``` bash
+flutter run
+```
 
 ------------------------------------------------------------------------
 
@@ -512,6 +557,54 @@ Never commit private credentials, API keys that should remain secret,
 service-account files, or other sensitive configuration to a public
 repository.
 
+------------------------------------------------------------------------
+
+# 🧪 Code Quality
+
+The project is continuously checked using Flutter/Dart static analysis.
+
+Run:
+
+``` bash
+dart analyze
+```
+
+or:
+
+``` bash
+flutter analyze
+```
+
+Format the project with:
+
+``` bash
+dart format .
+```
+
+------------------------------------------------------------------------
+
+# 📸 Documentation Screenshots
+
+All screenshots included in this repository are stored inside:
+
+``` text
+assets/readme/
+```
+
+The documentation intentionally includes all available screenshots
+without duplicating the same screenshot.
+
+For long screens, the screenshots are documented as sequential sections
+such as:
+
+``` text
+Screen
+Screen — Additional Section
+Screen — Additional Section 2
+```
+
+This keeps the README readable while documenting the complete
+application flow.
 
 ------------------------------------------------------------------------
 
@@ -581,6 +674,22 @@ Recommended production practices include:
 
 ------------------------------------------------------------------------
 
+# 🏗️ Future Improvements
+
+Possible future enhancements include:
+
+-   Advanced analytics dashboard.
+-   More detailed financial reports.
+-   Exporting financial reports.
+-   Advanced notification preferences.
+-   Automated document renewal workflows.
+-   More advanced search and filtering.
+-   Role-based access for different employees.
+-   Cloud-based vehicle image storage.
+-   Additional reporting and operational statistics.
+
+------------------------------------------------------------------------
+
 # 👨‍💻 Developer
 
 **Elostaz Travel** is a Flutter application developed as a
@@ -623,3 +732,11 @@ workflows.
 -   📱 Responsive Flutter UI.
 -   🧩 Reusable components.
 -   🔥 Firebase integration.
+
+------------------------------------------------------------------------
+
+## License
+
+This project is intended for its designated business/project use.
+
+Copyright © Elostaz Travel.
