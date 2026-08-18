@@ -148,4 +148,42 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       rethrow;
     }
   }
+
+  @override
+  Future<List<TripModel>> getAllTrips() async {
+    try {
+      final snapshot = await _trips()
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => TripModel.fromFirestore(doc)).toList();
+    } catch (e, stackTrace) {
+      print('GET ALL TRIPS ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<TripModel>> getMonthlyTrips({
+    required int year,
+    required int month,
+  }) async {
+    try {
+      final start = DateTime(year, month, 1);
+      final end = DateTime(year, month + 1, 1);
+
+      final snapshot = await _trips()
+          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('createdAt', isLessThan: Timestamp.fromDate(end))
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => TripModel.fromFirestore(doc)).toList();
+    } catch (e, stackTrace) {
+      print('GET MONTHLY TRIPS ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
 }

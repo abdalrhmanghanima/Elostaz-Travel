@@ -63,52 +63,65 @@ class BusTripsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: tripsState.when(
-        loading: () => const Center(
-          child: CustomLoading(),
-        ),
-        error: (error, stackTrace) => Center(
-          child: CustomText(
-            title: 'حدث خطأ في تحميل الرحلات',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.white,
+        onRefresh: () async {
+          await ref.refresh(busTripsProvider(bus.id!).future);
+        },
+        child: tripsState.when(
+          loading: () => const Center(
+            child: CustomLoading(),
           ),
-        ),
-        data: (trips) {
-          if (trips.isEmpty) {
-            return Column(
-              children: [
-                BusInfoCard(bus: bus),
-                Expanded(
-                  child: Center(
+          error: (error, stackTrace) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: 150.h),
+              Center(
+                child: CustomText(
+                  title: 'حدث خطأ في تحميل الرحلات',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          data: (trips) {
+            if (trips.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  BusInfoCard(bus: bus),
+                  SizedBox(height: 100.h),
+                  Center(
                     child: CustomText(
                       title: 'لا توجد رحلات لهذا الأتوبيس',
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              ],
-            );
-          }
+                ],
+              );
+            }
 
-          return Column(
-            children: [
-              BusInfoCard(bus: bus),
+            return Column(
+              children: [
+                BusInfoCard(bus: bus),
 
-              Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.fromLTRB(
-                    16.w,
-                    4.h,
-                    16.w,
-                    16.h,
-                  ),
-                  itemCount: trips.length,
-                  itemBuilder: (context, index) {
-                    final trip = trips[index];
+                Expanded(
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      16.w,
+                      4.h,
+                      16.w,
+                      16.h,
+                    ),
+                    itemCount: trips.length,
+                    itemBuilder: (context, index) {
+                      final trip = trips[index];
 
-                    return InkWell(
+                      return InkWell(
                       onTap: () {
                         showModalBottomSheet(
                           context: context,
@@ -156,7 +169,8 @@ class BusTripsScreen extends ConsumerWidget {
             ],
           );
         },
-      ),
+      )
+      )
     );
   }
 }

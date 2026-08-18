@@ -1,6 +1,7 @@
 import 'package:elostaz_travel/core/dimens/dimens.dart';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
+import 'package:elostaz_travel/core/services/bus_local_image_service.dart';
 import 'package:elostaz_travel/core/utils/app_assets.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
@@ -45,7 +46,7 @@ class _BusTabState extends ConsumerState<BusTab> {
         showToolBar: true,
         bgColor: AppColors.primary,
         centerTitle: true,
-        title: "الأتوبيسات",
+        title: "العربيات",
         fontColor: AppColors.white,
         fontSize: 24.sp,
         iconPath: AppIcons.add,
@@ -60,77 +61,103 @@ class _BusTabState extends ConsumerState<BusTab> {
           left: 16.w,
           right: 16.w,
         ),
-        child: busesState.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          error: (error, stackTrace) => Center(
-            child: CustomText(
-              title: error.toString(),
-              textAlign: TextAlign.center,
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          backgroundColor: AppColors.white,
+          onRefresh: () async {
+            await ref.read(busProvider.notifier).refreshBuses();
+          },
+          child: busesState.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
             ),
-          ),
-          data: (buses) {
-            final filteredBuses = buses.where((bus) {
-              final name = bus.busName.trim().toLowerCase();
-              final query = searchQuery.trim().toLowerCase();
-
-              return name.contains(query);
-            }).toList();
-
-            return Column(
+            error: (error, stackTrace) => ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                CustomTextFormField(
-                  controller: searchController,
-                  hint: 'ابحث باسم الأتوبيس',
-                  prefix: Icon(
-                    Icons.search_rounded,
-                    size: 23.sp,
-                    color: const Color(0xFF777B85),
-                  ),
-                  onChange: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                ),
-
-                SizedBox(height: 16.h),
-
-                Expanded(
-                  child: buses.isEmpty
-                      ? const Center(
-                    child: CustomText(
-                      title: "لا يوجد أتوبيسات",
-                    ),
-                  )
-                      : filteredBuses.isEmpty
-                      ? const Center(
-                    child: CustomText(
-                      title: "لا يوجد أتوبيس بهذا الاسم",
-                    ),
-                  )
-                      : ListView.builder(
-                    itemCount: filteredBuses.length,
-                    itemBuilder: (context, index) {
-                      final bus = filteredBuses[index];
-
-                      return _BusCard(
-                        bus: bus,
-                      );
-                    },
+                SizedBox(height: 150.h),
+                Center(
+                  child: CustomText(
+                    title: error.toString(),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
-            );
-          },
+            ),
+            data: (buses) {
+              final filteredBuses = buses.where((bus) {
+                final name = bus.busName.trim().toLowerCase();
+                final query = searchQuery.trim().toLowerCase();
+
+                return name.contains(query);
+              }).toList();
+
+              return Column(
+                children: [
+                  CustomTextFormField(
+                    controller: searchController,
+                    hint: 'ابحث باسم الأتوبيس',
+                    prefix: Icon(
+                      Icons.search_rounded,
+                      size: 23.sp,
+                      color: const Color(0xFF777B85),
+                    ),
+                    onChange: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                  ),
+
+                  SizedBox(height: 16.h),
+
+                  Expanded(
+                    child: buses.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(height: 150.h),
+                              const Center(
+                                child: CustomText(
+                                  title: "لا يوجد أتوبيسات",
+                                ),
+                              ),
+                            ],
+                          )
+                        : filteredBuses.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 150.h),
+                                  const Center(
+                                    child: CustomText(
+                                      title: "لا يوجد أتوبيس بهذا الاسم",
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                itemCount: filteredBuses.length,
+                                itemBuilder: (context, index) {
+                                  final bus = filteredBuses[index];
+
+                                  return _BusCard(
+                                    bus: bus,
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 }
 
-class _BusCard extends StatelessWidget {
+class _BusCard extends ConsumerWidget {
   final BusEntity bus;
 
   const _BusCard({
@@ -138,12 +165,19 @@ class _BusCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bool isLicenseValid =
     bus.licenseExpiryDate.isAfter(DateTime.now());
 
+    final localImagesAsync = bus.id != null
+        ? ref.watch(busLocalImagesProvider(bus.id!))
+        : null;
+    final localBusImage = localImagesAsync?.valueOrNull?.busImage;
+
     return GestureDetector(
-      onTap: () => NavigatorHandler.push(BusDetailsScreen(bus: bus,)),
+      onTap: () => NavigatorHandler.push(
+        BusDetailsScreen(bus: bus),
+      ),
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         width: Dimens.width,
@@ -166,57 +200,82 @@ class _BusCard extends StatelessWidget {
             bottom: 8.h,
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
             children: [
+              // Arrow
               CustomSvgIcon(
                 assetName: AppIcons.arrowBack,
               ),
 
-              SizedBox(width: 20.w),
+              SizedBox(width: 12.w),
 
+              // Status
+              CustomValidTextContainer(
+                text: isLicenseValid ? "ساري" : "منتهي",
+                fontColor: isLicenseValid
+                    ? AppColors.black
+                    : AppColors.red,
+                backgroundColor: isLicenseValid
+                    ? AppColors.lightGreen
+                    : AppColors.lightRed,
+              ),
+
+              SizedBox(width: 10.w),
+
+              // Bus Information
               Expanded(
-                child: CustomValidTextContainer(
-                  text: isLicenseValid ? "ساري" : "منتهي",
-                  fontColor: isLicenseValid
-                      ? AppColors.black
-                      : AppColors.red,
-                  backgroundColor: isLicenseValid
-                      ? AppColors.lightGreen
-                      : AppColors.lightRed,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    CustomText(
+                      title: bus.busName,
+                      fontSize: 20.sp,
+                      textAlign: TextAlign.right,
+                    ),
+
+                    SizedBox(height: 2.h),
+
+                    CustomText(
+                      title: "${bus.brand} - ${bus.modelYear}",
+                      textAlign: TextAlign.right,
+                    ),
+
+                    SizedBox(height: 2.h),
+
+                    CustomText(
+                      title: bus.plateNumber,
+                      textAlign: TextAlign.right,
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: 14.w,),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  CustomText(
-                    title: bus.busName,
-                    fontSize: 20.sp,
-                  ),
-                  CustomText(
-                    title: "${bus.brand} - ${bus.modelYear}",
-                    textAlign: TextAlign.end,
-                  ),
-                  CustomText(
-                    title: bus.plateNumber,
-                    textAlign: TextAlign.end,
-                  ),
 
-                ],
-              ),
+              SizedBox(width: 12.w),
 
-              SizedBox(width: 16.w),
-
+              // Bus Image - Fixed Size
               ClipRRect(
                 borderRadius: BorderRadius.circular(8.r),
-                child: bus.busImageUrl != null &&
+                child: localBusImage != null
+                    ? Image.file(
+                  localBusImage,
+                  width: 80.w,
+                  height: 80.w,
+                  fit: BoxFit.cover,
+                )
+                    : bus.busImageUrl != null &&
                     bus.busImageUrl!.isNotEmpty
                     ? Image.network(
                   bus.busImageUrl!,
                   width: 80.w,
                   height: 80.w,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) {
+                    return CustomAssetImage(
+                      assetName: AppAssets.bus,
+                      width: 80.w,
+                      height: 80.w,
+                    );
+                  },
                 )
                     : CustomAssetImage(
                   assetName: AppAssets.bus,

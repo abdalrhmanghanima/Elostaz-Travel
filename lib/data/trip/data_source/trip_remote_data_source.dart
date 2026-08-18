@@ -8,4 +8,13 @@ abstract class TripRemoteDataSource {
   Future<List<TripModel>> getBusTrips(String busId);
 
   Future<List<TripModel>> getDriverTrips(String driverId);
+
+  /// Returns all trips belonging to the user.
+  Future<List<TripModel>> getAllTrips();
+
+  /// Returns all trips whose [createdAt] falls within the given month/year.
+  Future<List<TripModel>> getMonthlyTrips({
+    required int year,
+    required int month,
+  });
 }

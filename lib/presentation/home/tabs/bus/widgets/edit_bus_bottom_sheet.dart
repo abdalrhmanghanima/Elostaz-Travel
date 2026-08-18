@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:elostaz_travel/core/extensions/extensions.dart';
+import 'package:elostaz_travel/core/services/bus_local_image_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_button/custom_button.dart';
@@ -9,6 +10,9 @@ import 'package:elostaz_travel/presentation/components/inputs/custom_text_form.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+
+
 
 class EditBusBottomSheet extends ConsumerStatefulWidget {
   const EditBusBottomSheet({
@@ -40,6 +44,9 @@ class _EditBusBottomSheetState
   File? selectedBusImage;
   File? selectedLicenseImage;
 
+  File? existingLocalBusImage;
+  File? existingLocalLicenseImage;
+
   final ImagePicker imagePicker = ImagePicker();
 
   bool isLoading = false;
@@ -54,6 +61,27 @@ class _EditBusBottomSheetState
 
     selectedLicenseExpiryDate =
         widget.bus.licenseExpiryDate;
+
+    _loadExistingLocalImages();
+  }
+
+  Future<void> _loadExistingLocalImages() async {
+    final busId = widget.bus.id;
+
+    if (busId == null) return;
+
+    final busImage =
+    await BusLocalImageService.instance.getBusImage(busId);
+
+    final licenseImage =
+    await BusLocalImageService.instance.getLicenseImage(busId);
+
+    if (!mounted) return;
+
+    setState(() {
+      existingLocalBusImage = busImage;
+      existingLocalLicenseImage = licenseImage;
+    });
   }
 
   @override
@@ -62,69 +90,317 @@ class _EditBusBottomSheetState
     super.dispose();
   }
 
-  Future<void> _pickBusImage() async {
-    final image = await imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
+  // ============================================================
+  // IMAGE SOURCE PICKER (CAMERA / GALLERY)
+  // ============================================================
 
-    if (image == null) return;
-
-    setState(() {
-      selectedBusImage = File(image.path);
-    });
-  }
-
-  Future<void> _pickLicenseImage() async {
-    final image = await imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-
-    if (image == null) return;
-
-    setState(() {
-      selectedLicenseImage = File(image.path);
-    });
-  }
-
-  Future<void> _pickLicenseExpiryDate() async {
-    final date = await showDatePicker(
+  Future<ImageSource?> _showImageSourcePicker() async {
+    return await showModalBottomSheet<ImageSource>(
       context: context,
-      initialDate: selectedLicenseExpiryDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24.r),
+        ),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 20.w,
+              vertical: 20.h,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 45.w,
+                  height: 5.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                CustomText(
+                  title: 'اختر طريقة رفع الصورة',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  fontColor: AppColors.primary,
+                ),
+                SizedBox(height: 20.h),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primary,
+                    child: Icon(
+                      Icons.camera_alt_outlined,
+                      color: Colors.white,
+                      size: 22.sp,
+                    ),
+                  ),
+                  title: CustomText(
+                    title: 'الكاميرا',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext, ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primary,
+                    child: Icon(
+                      Icons.photo_library_outlined,
+                      color: Colors.white,
+                      size: 22.sp,
+                    ),
+                  ),
+                  title: CustomText(
+                    title: 'المعرض',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext, ImageSource.gallery);
+                  },
+                ),
+              ],
             ),
           ),
-          child: child!,
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // BUS IMAGE
+  // ============================================================
+
+  Future<void> _pickBusImage() async {
+    if (isLoading) return;
+
+    final source = await _showImageSourcePicker();
+    if (source == null) return;
+
+    final image = await imagePicker.pickImage(
+      source: source,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    try {
+      final sourceFile = File(image.path);
+
+      if (!await sourceFile.exists()) {
+        return;
+      }
+
+      final tempDir =
+      await getApplicationDocumentsDirectory();
+
+      final imagesDir = Directory(
+        '${tempDir.path}/bus_edit_temp',
+      );
+
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(
+          recursive: true,
+        );
+      }
+
+      final savedFile = File(
+        '${imagesDir.path}/selected_bus_image_${widget.bus.id}.jpg',
+      );
+
+      // امسح النسخة السابقة لو موجودة
+      if (await savedFile.exists()) {
+        await savedFile.delete();
+      }
+
+      // انسخ الصورة من cache لمكان دائم
+      await sourceFile.copy(
+        savedFile.path,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        selectedBusImage = savedFile;
+      });
+
+      debugPrint(
+        'Temporary permanent bus image saved: ${savedFile.path}',
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        'Error selecting bus image: $e',
+      );
+      debugPrint(
+        '$stackTrace',
+      );
+    }
+  }
+  Future<void> _pickLicenseImage() async {
+    if (isLoading) return;
+
+    final source = await _showImageSourcePicker();
+    if (source == null) return;
+
+    final image = await imagePicker.pickImage(
+      source: source,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    try {
+      final sourceFile = File(image.path);
+
+      if (!await sourceFile.exists()) {
+        return;
+      }
+
+      final tempDir =
+      await getApplicationDocumentsDirectory();
+
+      final imagesDir = Directory(
+        '${tempDir.path}/bus_edit_temp',
+      );
+
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(
+          recursive: true,
+        );
+      }
+
+      final savedFile = File(
+        '${imagesDir.path}/selected_license_image_${widget.bus.id}.jpg',
+      );
+
+      if (await savedFile.exists()) {
+        await savedFile.delete();
+      }
+
+      await sourceFile.copy(
+        savedFile.path,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        selectedLicenseImage = savedFile;
+      });
+
+      debugPrint(
+        'Temporary permanent license image saved: ${savedFile.path}',
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        'Error selecting license image: $e',
+      );
+      debugPrint(
+        '$stackTrace',
+      );
+    }
+  }
+
+  // ============================================================
+  // DATE PICKER
+  // ============================================================
+
+  Future<void> _pickLicenseExpiryDate() async {
+    if (isLoading) return;
+
+    final now = DateTime.now();
+
+    // نخلي firstDate من بداية اليوم الحالي
+    final today = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
+
+    // لو التاريخ الحالي للرخصة قديم، نسمح للـDatePicker
+    // إنه يبدأ من التاريخ القديم حتى يقدر يعرضه.
+    final firstDate = selectedLicenseExpiryDate.isBefore(today)
+        ? DateTime(
+      selectedLicenseExpiryDate.year,
+      selectedLicenseExpiryDate.month,
+      selectedLicenseExpiryDate.day,
+    )
+        : today;
+
+    final selectedDate = await showDialog<DateTime>(
+      context: Navigator.of(
+        context,
+        rootNavigator: true,
+      ).context,
+      useRootNavigator: true,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return DatePickerDialog(
+          initialDate: selectedLicenseExpiryDate,
+          firstDate: firstDate,
+          lastDate: DateTime(2100),
+          initialCalendarMode: DatePickerMode.day,
         );
       },
     );
 
-    if (date == null) return;
+    if (selectedDate == null) return;
+
+    if (!mounted) return;
 
     setState(() {
-      selectedLicenseExpiryDate = date;
+      selectedLicenseExpiryDate = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+      );
     });
   }
+
+  // ============================================================
+  // SAVE
+  // ============================================================
 
   Future<void> _save() async {
     final busName = busNameController.text.trim();
 
     if (busName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('من فضلك أدخل اسم الأتوبيس'),
+        ),
+      );
       return;
     }
+
+    if (isLoading) return;
 
     setState(() {
       isLoading = true;
     });
 
     try {
+      debugPrint(
+        '================ EDIT BUS SAVE ================',
+      );
+
+      debugPrint('Bus ID: ${widget.bus.id}');
+      debugPrint('Bus Name: $busName');
+      debugPrint(
+        'License Expiry: $selectedLicenseExpiryDate',
+      );
+      debugPrint(
+        'New Bus Image: ${selectedBusImage?.path}',
+      );
+      debugPrint(
+        'New License Image: ${selectedLicenseImage?.path}',
+      );
+
       final success = await widget.onSave(
         busName: busName,
         licenseExpiryDate: selectedLicenseExpiryDate,
@@ -132,23 +408,64 @@ class _EditBusBottomSheetState
         licenseImage: selectedLicenseImage,
       );
 
+      debugPrint('UPDATE RESULT: $success');
+
       if (!mounted) return;
 
       if (success) {
-        Navigator.pop(context);
-      } else {
-        setState(() {
-          isLoading = false;
-        });
+        // مهم جدًا:
+        // الصور اتحفظت Local بالفعل داخل onSave،
+        // فنطلب من Provider إعادة قراءة الصور.
+        if (widget.bus.id != null) {
+          ref.invalidate(
+            busLocalImagesProvider(widget.bus.id!),
+          );
+        }
+
+        // نقفل Edit Bottom Sheet بعد تحديث الـProvider
+        Navigator.of(context).pop();
+
+        return;
       }
-    } catch (_) {
+
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'فشل تعديل بيانات الأتوبيس',
+          ),
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        '================ EDIT BUS ERROR ================',
+      );
+
+      debugPrint('ERROR: $e');
+      debugPrint('STACK TRACE: $stackTrace');
+
       if (!mounted) return;
 
       setState(() {
         isLoading = false;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'حدث خطأ أثناء تعديل الأتوبيس: $e',
+          ),
+        ),
+      );
     }
   }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +480,10 @@ class _EditBusBottomSheetState
         ),
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment:
+            CrossAxisAlignment.stretch,
             children: [
+              // Handle
               Center(
                 child: Container(
                   width: 45.w,
@@ -179,6 +498,7 @@ class _EditBusBottomSheetState
 
               SizedBox(height: 20.h),
 
+              // Title
               CustomText(
                 title: 'تعديل بيانات الأتوبيس',
                 fontSize: 20.sp,
@@ -188,6 +508,10 @@ class _EditBusBottomSheetState
               ),
 
               SizedBox(height: 24.h),
+
+              // ==================================================
+              // BUS NAME
+              // ==================================================
 
               CustomText(
                 title: 'اسم الأتوبيس',
@@ -204,6 +528,10 @@ class _EditBusBottomSheetState
 
               SizedBox(height: 16.h),
 
+              // ==================================================
+              // LICENSE EXPIRY DATE
+              // ==================================================
+
               CustomText(
                 title: 'تاريخ انتهاء الرخصة',
                 fontSize: 14.sp,
@@ -213,13 +541,13 @@ class _EditBusBottomSheetState
               SizedBox(height: 7.h),
 
               InkWell(
-                onTap: isLoading
-                    ? null
-                    : _pickLicenseExpiryDate,
-                borderRadius: BorderRadius.circular(16.r),
+                onTap: _pickLicenseExpiryDate,
+                borderRadius:
+                BorderRadius.circular(16.r),
                 child: Container(
                   height: 56.h,
-                  padding: EdgeInsets.symmetric(
+                  padding:
+                  EdgeInsets.symmetric(
                     horizontal: 16.w,
                   ),
                   decoration: BoxDecoration(
@@ -234,7 +562,9 @@ class _EditBusBottomSheetState
                         color: AppColors.primary,
                         size: 22.sp,
                       ),
+
                       SizedBox(width: 10.w),
+
                       Expanded(
                         child: CustomText(
                           title:
@@ -242,11 +572,14 @@ class _EditBusBottomSheetState
                               '${selectedLicenseExpiryDate.month}/'
                               '${selectedLicenseExpiryDate.year}',
                           fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
+                          fontWeight:
+                          FontWeight.w500,
                         ),
                       ),
+
                       Icon(
-                        Icons.keyboard_arrow_down_rounded,
+                        Icons
+                            .keyboard_arrow_down_rounded,
                         color: Colors.grey,
                         size: 22.sp,
                       ),
@@ -256,6 +589,10 @@ class _EditBusBottomSheetState
               ),
 
               SizedBox(height: 20.h),
+
+              // ==================================================
+              // BUS IMAGE
+              // ==================================================
 
               CustomText(
                 title: 'صورة الأتوبيس',
@@ -267,8 +604,12 @@ class _EditBusBottomSheetState
 
               _ImagePickerContainer(
                 selectedImage: selectedBusImage,
-                existingImageUrl: widget.bus.busImageUrl,
-                icon: Icons.directions_bus_outlined,
+                existingLocalImage:
+                existingLocalBusImage,
+                existingImageUrl:
+                widget.bus.busImageUrl,
+                icon:
+                Icons.directions_bus_outlined,
                 title: 'تغيير صورة الأتوبيس',
                 onTap: isLoading
                     ? null
@@ -276,6 +617,10 @@ class _EditBusBottomSheetState
               ),
 
               SizedBox(height: 18.h),
+
+              // ==================================================
+              // LICENSE IMAGE
+              // ==================================================
 
               CustomText(
                 title: 'صورة رخصة الأتوبيس',
@@ -286,10 +631,14 @@ class _EditBusBottomSheetState
               SizedBox(height: 8.h),
 
               _ImagePickerContainer(
-                selectedImage: selectedLicenseImage,
+                selectedImage:
+                selectedLicenseImage,
+                existingLocalImage:
+                existingLocalLicenseImage,
                 existingImageUrl:
                 widget.bus.licenseImageUrl,
-                icon: Icons.description_outlined,
+                icon:
+                Icons.description_outlined,
                 title: 'تغيير صورة الرخصة',
                 onTap: isLoading
                     ? null
@@ -297,6 +646,10 @@ class _EditBusBottomSheetState
               ),
 
               SizedBox(height: 24.h),
+
+              // ==================================================
+              // SAVE
+              // ==================================================
 
               CustomButton(
                 title: 'حفظ التعديلات',
@@ -320,9 +673,15 @@ class _EditBusBottomSheetState
   }
 }
 
-class _ImagePickerContainer extends StatelessWidget {
+// ================================================================
+// IMAGE PICKER CONTAINER
+// ================================================================
+
+class _ImagePickerContainer
+    extends StatelessWidget {
   const _ImagePickerContainer({
     required this.selectedImage,
+    this.existingLocalImage,
     required this.existingImageUrl,
     required this.icon,
     required this.title,
@@ -330,14 +689,20 @@ class _ImagePickerContainer extends StatelessWidget {
   });
 
   final File? selectedImage;
+  final File? existingLocalImage;
   final String? existingImageUrl;
+
   final IconData icon;
   final String title;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final hasSelectedImage = selectedImage != null;
+    final hasSelectedImage =
+        selectedImage != null;
+
+    final hasExistingLocalImage =
+        existingLocalImage != null;
 
     final hasExistingImage =
         existingImageUrl != null &&
@@ -345,13 +710,15 @@ class _ImagePickerContainer extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
+      borderRadius:
+      BorderRadius.circular(16.r),
       child: Container(
         width: double.infinity,
         height: 150.h,
         decoration: BoxDecoration(
           color: AppColors.inputBg,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius:
+          BorderRadius.circular(16.r),
           border: Border.all(
             color: Colors.grey.shade300,
           ),
@@ -365,7 +732,22 @@ class _ImagePickerContainer extends StatelessWidget {
               selectedImage!,
               fit: BoxFit.cover,
             ),
-            _ImageOverlay(title: title),
+            _ImageOverlay(
+              title: title,
+            ),
+          ],
+        )
+            : hasExistingLocalImage
+            ? Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(
+              existingLocalImage!,
+              fit: BoxFit.cover,
+            ),
+            _ImageOverlay(
+              title: title,
+            ),
           ],
         )
             : hasExistingImage
@@ -383,7 +765,9 @@ class _ImagePickerContainer extends StatelessWidget {
                 );
               },
             ),
-            _ImageOverlay(title: title),
+            _ImageOverlay(
+              title: title,
+            ),
           ],
         )
             : _EmptyImageState(
@@ -395,7 +779,12 @@ class _ImagePickerContainer extends StatelessWidget {
   }
 }
 
-class _EmptyImageState extends StatelessWidget {
+// ================================================================
+// EMPTY IMAGE
+// ================================================================
+
+class _EmptyImageState
+    extends StatelessWidget {
   const _EmptyImageState({
     required this.icon,
     required this.title,
@@ -407,7 +796,8 @@ class _EmptyImageState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment:
+      MainAxisAlignment.center,
       children: [
         Icon(
           icon,
@@ -426,7 +816,12 @@ class _EmptyImageState extends StatelessWidget {
   }
 }
 
-class _ImageOverlay extends StatelessWidget {
+// ================================================================
+// IMAGE OVERLAY
+// ================================================================
+
+class _ImageOverlay
+    extends StatelessWidget {
   const _ImageOverlay({
     required this.title,
   });

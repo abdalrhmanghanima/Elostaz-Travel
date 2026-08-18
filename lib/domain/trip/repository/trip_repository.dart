@@ -8,4 +8,11 @@ abstract class TripRepository {
   Future<List<TripEntity>> getBusTrips(String busId);
 
   Future<List<TripEntity>> getDriverTrips(String driverId);
+
+  Future<List<TripEntity>> getAllTrips();
+
+  Future<List<TripEntity>> getMonthlyTrips({
+    required int year,
+    required int month,
+  });
 }

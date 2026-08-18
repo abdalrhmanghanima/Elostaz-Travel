@@ -7,6 +7,7 @@ import 'package:elostaz_travel/domain/driver/entity/driver_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/driver_monthly_report_service.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
 import 'package:flutter/material.dart';
@@ -57,27 +58,43 @@ class DriverDetailsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: tripsState.when(
-        loading: () => const Center(
-          child: CustomLoading(),
-        ),
-
-        error: (error, stackTrace) => Center(
-          child: CustomText(
-            title: 'حدث خطأ في تحميل الرحلات',
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w600,
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.white,
+        onRefresh: () async {
+          await Future.wait([
+            ref.read(driversProvider.notifier).getDrivers(),
+            ref.refresh(driverTripsProvider(driver.id).future),
+          ]);
+        },
+        child: tripsState.when(
+          loading: () => const Center(
+            child: CustomLoading(),
           ),
-        ),
 
-        data: (trips) {
-          return SingleChildScrollView(
-            padding: EdgeInsets.only(
-              top: 24.h,
-              right: 20.w,
-              left: 20.w,
-              bottom: 24.h,
-            ),
+          error: (error, stackTrace) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: 150.h),
+              Center(
+                child: CustomText(
+                  title: 'حدث خطأ في تحميل الرحلات',
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          data: (trips) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(
+                top: 24.h,
+                right: 20.w,
+                left: 20.w,
+                bottom: 24.h,
+              ),
             child: Column(
               children: [
                 Container(
@@ -216,6 +233,7 @@ class DriverDetailsScreen extends ConsumerWidget {
           );
         },
       ),
+      )
     );
   }
 }
@@ -231,23 +249,24 @@ class _DriverStatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72.h,
+      width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: 8.w,
-        vertical: 8.h,
+        vertical: 10.h,
       ),
       decoration: BoxDecoration(
         color: AppColors.backgroundGray,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           CustomText(
             title: title,
             fontSize: 11.sp,
             fontWeight: FontWeight.w600,
             fontColor: const Color(0xFF666A73),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: 5.h),
           CustomText(
@@ -255,6 +274,7 @@ class _DriverStatItem extends StatelessWidget {
             fontSize: 17.sp,
             fontWeight: FontWeight.w800,
             fontColor: AppColors.primary,
+            textAlign: TextAlign.center,
           ),
         ],
       ),

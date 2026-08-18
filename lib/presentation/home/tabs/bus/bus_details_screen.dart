@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:elostaz_travel/core/dimens/dimens.dart';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
+import 'package:elostaz_travel/core/services/bus_local_image_service.dart';
+import 'package:elostaz_travel/core/services/license_notification_service.dart';
 import 'package:elostaz_travel/core/utils/app_assets.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
@@ -13,9 +17,11 @@ import 'package:elostaz_travel/presentation/components/custom_svg/custom_svg_ico
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/bus_trips_screen.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/add_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_action_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_monthly_report_service.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/delete_bus_bottom_sheet.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/edit_bus_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/widgets/custom_valid_text_container.dart';
@@ -30,8 +36,25 @@ class BusDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tripsState = ref.watch(busTripsProvider(bus.id!));
-    final bool isLicenseValid = bus.licenseExpiryDate.isAfter(DateTime.now());
+    final buses = ref.watch(busProvider).valueOrNull;
+
+    BusEntity currentBus = bus;
+
+    if (buses != null) {
+      final index = buses.indexWhere((b) => b.id == bus.id);
+
+      if (index != -1) {
+        currentBus = buses[index];
+      }
+    }
+    final localImagesAsync =
+        ref.watch(busLocalImagesProvider(currentBus.id!));
+    final localBusImage = localImagesAsync.valueOrNull?.busImage;
+    final localLicenseImage = localImagesAsync.valueOrNull?.licenseImage;
+
+    final tripsState = ref.watch(busTripsProvider(currentBus.id!));
+    final bool isLicenseValid =
+        currentBus.licenseExpiryDate.isAfter(DateTime.now());
     final driversState = ref.watch(driversProvider);
 
     return Scaffold(
@@ -40,7 +63,7 @@ class BusDetailsScreen extends ConsumerWidget {
         showToolBar: true,
         bgColor: AppColors.primary,
         centerTitle: true,
-        title: "بيانات الأتوبيس",
+        title: "بيانات العربية",
         fontColor: AppColors.white,
         fontSize: 24.sp,
         iconPath: AppIcons.arrowLeft,
@@ -54,7 +77,7 @@ class BusDetailsScreen extends ConsumerWidget {
                     (trips) {
                   BusMonthlyReportService
                       .shareCurrentMonthReport(
-                    bus: bus,
+                    bus: currentBus,
                     trips: trips,
                   );
                 },
@@ -66,16 +89,18 @@ class BusDetailsScreen extends ConsumerWidget {
               size: 24.sp,
             ),
           ),
-          SizedBox(width: 4.w,),
+          SizedBox(width: 2.w),
           Padding(
-            padding: EdgeInsets.only(right: 12.w),
+            padding: EdgeInsets.only(right: 4.w),
             child: InkWell(
-              onTap: () {
-                driversState.when(
+              borderRadius: BorderRadius.circular(22.r),
+              onTap: () async {
+                final drivers = driversState.when(
                   loading: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('جاري تحميل السواقين...')),
                     );
+                    return null;
                   },
                   error: (error, stackTrace) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -83,94 +108,251 @@ class BusDetailsScreen extends ConsumerWidget {
                         content: Text('حدث خطأ أثناء تحميل السواقين'),
                       ),
                     );
+                    return null;
                   },
-                  data: (drivers) {
-                    showModalBottomSheet(
+                  data: (drivers) => drivers,
+                );
+
+                if (drivers == null || !context.mounted) return;
+
+                final action = await showModalBottomSheet<BusActionType>(
+                  context: context,
+                  backgroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24.r),
+                    ),
+                  ),
+                  builder: (_) => BusActionsBottomSheet(
+                    drivers: drivers,
+                    bus: currentBus,
+                  ),
+                );
+
+                if (action == null || !context.mounted) return;
+
+                if (action == BusActionType.addTrip) {
+                  await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => AddTripBottomSheet(
+                      drivers: drivers,
+                      bus: currentBus,
+                    )
+                  );
+                  } else if (action == BusActionType.editBus) {
+                    final busNotifier = ref.read(busProvider.notifier);
+
+                    await showModalBottomSheet(
                       context: context,
+                      isScrollControlled: true,
                       backgroundColor: AppColors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.vertical(
                           top: Radius.circular(24.r),
                         ),
                       ),
-                      builder: (_) =>
-                          BusActionsBottomSheet(drivers: drivers, bus: bus),
+                      builder: (_) => EditBusBottomSheet(
+                        bus: currentBus,
+                        onSave: ({
+                          required String busName,
+                          required DateTime licenseExpiryDate,
+                          File? busImage,
+                          File? licenseImage,
+                        }) async {
+                          try {
+                            final updatedBus = BusEntity(
+                              id: currentBus.id,
+                              busName: busName,
+                              plateNumber: currentBus.plateNumber,
+                              brand: currentBus.brand,
+                              modelYear: currentBus.modelYear,
+                              chassisNumber: currentBus.chassisNumber,
+                              engineNumber: currentBus.engineNumber,
+                              passengerCount: currentBus.passengerCount,
+                              vehicleType: currentBus.vehicleType,
+                              licenseExpiryDate: licenseExpiryDate,
+                              licenseImageUrl: currentBus.licenseImageUrl,
+                              busImageUrl: currentBus.busImageUrl,
+                              specialConditions: currentBus.specialConditions,
+                              insuranceType: currentBus.insuranceType,
+                            );
+
+                            await busNotifier.updateBus(bus: updatedBus);
+
+                            if (currentBus.id != null) {
+                              if (busImage != null) {
+                                await BusLocalImageService.instance
+                                    .saveBusImage(currentBus.id!, busImage);
+                              }
+                              if (licenseImage != null) {
+                                await BusLocalImageService.instance
+                                    .saveLicenseImage(currentBus.id!, licenseImage);
+                              }
+                            }
+
+                            await LicenseNotificationService.instance
+                                .rescheduleBusLicenseNotifications(updatedBus);
+
+                            return true;
+                          } catch (e) {
+                            return false;
+                          }
+                        },
+                      ),
                     );
-                  },
-                );
-              },
-              child: CustomSvgIcon(
-                assetName: AppIcons.more,
-                width: 20.w,
-                height: 20.w,
+                  }
+                },
+                child: SizedBox(
+                  width: 44.w,
+                  height: 44.h,
+                  child: Center(
+                    child: CustomSvgIcon(
+                      assetName: AppIcons.more,
+                      width: 20.w,
+                      height: 20.w,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
+          ],
+        ),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.white,
+        onRefresh: () async {
+          await Future.wait([
+            ref.read(busProvider.notifier).refreshBuses(),
+            if (currentBus.id != null)
+              ref.refresh(busTripsProvider(currentBus.id!).future),
+            if (currentBus.id != null)
+              ref.refresh(busLocalImagesProvider(currentBus.id!).future),
+          ]);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 16.h),
+              padding: EdgeInsets.only(
+                left: 16.w,
+                right: 16.w,
+                top: 16.h,
+              ),
               child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: 10.h,
+                  horizontal: 8.w,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.backgroundGray,
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.only(right: 8.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              CustomText(title: bus.busName, fontSize: 18.sp),
-                              CustomText(
-                                title: " :اسم العربية",
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8.h),
-                          Row(
-                            children: [
-                              CustomText(
-                                title: bus.plateNumber,
-                                fontSize: 18.sp,
-                              ),
-                              CustomText(
-                                title: " :نمرة العربية",
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ],
-                          ),
-                        ],
+                    // البيانات
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: 8.w,
+                          left: 4.w,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // اسم العربية
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                CustomText(
+                                  title: 'اسم العربية',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
+                                  fontColor: AppColors.darkGray,
+                                ),
+                                SizedBox(height: 3.h),
+                                CustomText(
+                                  title: currentBus.busName,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  textAlign: TextAlign.right,
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: 12.h),
+
+                            // نمرة العربية
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                CustomText(
+                                  title: 'نمرة العربية',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
+                                  fontColor: AppColors.darkGray,
+                                ),
+                                SizedBox(height: 3.h),
+                                CustomText(
+                                  title: currentBus.plateNumber,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  textAlign: TextAlign.right,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+
+                    SizedBox(width: 8.w),
+
+                    // صورة الأتوبيس
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16.r),
-                      child: CustomAssetImage(
+                      child: localBusImage != null
+                          ? Image.file(
+                        localBusImage,
+                        width: 140.w,
+                        height: 125.h,
+                        fit: BoxFit.cover,
+                      )
+                          : currentBus.busImageUrl != null &&
+                          currentBus.busImageUrl!.isNotEmpty
+                          ? Image.network(
+                        currentBus.busImageUrl!,
+                        width: 140.w,
+                        height: 125.h,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) {
+                          return CustomAssetImage(
+                            assetName: AppAssets.defaultBus,
+                            width: 140.w,
+                            height: 125.h,
+                          );
+                        },
+                      )
+                          : CustomAssetImage(
                         assetName: AppAssets.defaultBus,
-                        width: 180.w,
-                        height: 160.h,
+                        width: 140.w,
+                        height: 125.h,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 18.h),
+            SizedBox(height: 14.h),
             Padding(
-              padding: EdgeInsets.only(left: 16.w, right: 16.w),
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Container(
-                width: Dimens.width,
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.backgroundGray,
                   borderRadius: BorderRadius.circular(16.r),
@@ -179,6 +361,7 @@ class BusDetailsScreen extends ConsumerWidget {
                   padding: EdgeInsets.all(16.r),
                   child: Column(
                     children: [
+                      // ================= Header =================
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -196,151 +379,274 @@ class BusDetailsScreen extends ConsumerWidget {
                         ],
                       ),
 
-                      Divider(color: AppColors.primary),
+                      SizedBox(height: 8.h),
 
-                      Padding(
-                        padding: EdgeInsets.only(right: 8.w, bottom: 12.h),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(title: "الموديل", fontSize: 18.sp),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: "${bus.modelYear} :${bus.brand}",
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(
-                                    title: "نمرة العربية",
-                                    fontSize: 18.sp,
-                                  ),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: bus.plateNumber,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      Divider(
+                        color: AppColors.primary,
+                        height: 1,
                       ),
 
-                      Padding(
-                        padding: EdgeInsets.only(right: 8.w, bottom: 12.h),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(title: "الموتور", fontSize: 18.sp),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: bus.engineNumber,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
+                      SizedBox(height: 16.h),
+
+                      // ================= رقم الشاسية =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "الشاسية",
+                                fontSize: 16.sp,
                               ),
                             ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(title: "الشاسية", fontSize: 18.sp),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: bus.chassisNumber,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: currentBus.chassisNumber,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
 
-                      Padding(
-                        padding: EdgeInsets.only(right: 8.w, bottom: 12.h),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(title: "السعة", fontSize: 18.sp),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: "${bus.passengerCount}",
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
+                      SizedBox(height: 16.h),
+
+                      // ================= رقم الموتور =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "الموتور",
+                                fontSize: 16.sp,
                               ),
                             ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(title: "النوع", fontSize: 18.sp),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: bus.vehicleType,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: currentBus.engineNumber,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
 
-                      Padding(
-                        padding: EdgeInsets.only(right: 8.w, bottom: 12.h),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(
-                                    title: "حالة التأمين",
-                                    fontSize: 18.sp,
-                                  ),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: bus.insuranceType,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
+                      SizedBox(height: 16.h),
+
+                      // ================= نمرة العربية =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "نمرة العربية",
+                                fontSize: 16.sp,
                               ),
                             ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  CustomText(
-                                    title: "اشتراطات خاصة",
-                                    fontSize: 18.sp,
-                                  ),
-                                  SizedBox(height: 4.h),
-                                  CustomText(
-                                    title: bus.specialConditions,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ],
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: currentBus.plateNumber,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ================= الموديل =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "الموديل",
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: "${currentBus.brand} :${currentBus.modelYear}",
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ================= السعة =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "السعة",
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: "${currentBus.passengerCount}",
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ================= النوع =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "النوع",
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: currentBus.vehicleType,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ================= حالة التأمين =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "حالة التأمين",
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: currentBus.insuranceType,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ================= اشتراطات خاصة =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "اشتراطات خاصة",
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: currentBus.specialConditions,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 3,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -408,10 +714,25 @@ class BusDetailsScreen extends ConsumerWidget {
                                             maxWidth: 350.w,
                                             maxHeight: 650.h,
                                           ),
-                                          child: Image.asset(
-                                            imagePath,
-                                            fit: BoxFit.contain,
-                                          ),
+                                          child: localLicenseImage != null
+                                              ? Image.file(
+                                                  localLicenseImage,
+                                                  fit: BoxFit.contain,
+                                                )
+                                              : currentBus.licenseImageUrl != null &&
+                                                      currentBus.licenseImageUrl!.isNotEmpty
+                                                  ? Image.network(
+                                                      currentBus.licenseImageUrl!,
+                                                      fit: BoxFit.contain,
+                                                      errorBuilder: (_, __, ___) => Image.asset(
+                                                        imagePath,
+                                                        fit: BoxFit.contain,
+                                                      ),
+                                                    )
+                                                  : Image.asset(
+                                                      imagePath,
+                                                      fit: BoxFit.contain,
+                                                    ),
                                         ),
                                       ),
                                     );
@@ -420,11 +741,31 @@ class BusDetailsScreen extends ConsumerWidget {
                               },
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16.r),
-                                child: CustomAssetImage(
-                                  assetName: AppAssets.plate,
-                                  width: 80.w,
-                                  height: 64.h,
-                                ),
+                                child: localLicenseImage != null
+                                    ? Image.file(
+                                        localLicenseImage,
+                                        width: 80.w,
+                                        height: 64.h,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : currentBus.licenseImageUrl != null &&
+                                            currentBus.licenseImageUrl!.isNotEmpty
+                                        ? Image.network(
+                                            currentBus.licenseImageUrl!,
+                                            width: 80.w,
+                                            height: 64.h,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => CustomAssetImage(
+                                              assetName: AppAssets.plate,
+                                              width: 80.w,
+                                              height: 64.h,
+                                            ),
+                                          )
+                                        : CustomAssetImage(
+                                            assetName: AppAssets.plate,
+                                            width: 80.w,
+                                            height: 64.h,
+                                          ),
                               ),
                             ),
                             Column(
@@ -437,7 +778,7 @@ class BusDetailsScreen extends ConsumerWidget {
                                 SizedBox(height: 4.h),
                                 CustomText(
                                   title:
-                                      '${bus.licenseExpiryDate.year}-${bus.licenseExpiryDate.month.toString().padLeft(2, '0')}-${bus.licenseExpiryDate.day.toString().padLeft(2, '0')}',
+                                      '${currentBus.licenseExpiryDate.year}-${currentBus.licenseExpiryDate.month.toString().padLeft(2, '0')}-${currentBus.licenseExpiryDate.day.toString().padLeft(2, '0')}',
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -469,7 +810,7 @@ class BusDetailsScreen extends ConsumerWidget {
                 children: [
                   InkWell(
                     onTap: (){
-                      NavigatorHandler.push(BusTripsScreen(bus: bus));
+                      NavigatorHandler.push(BusTripsScreen(bus: currentBus));
                     },
                     child: CustomText(
                       title: "عرض الكل؟",
@@ -528,7 +869,7 @@ class BusDetailsScreen extends ConsumerWidget {
 
                             return TripCard(
                               trip: trip,
-                              busId: bus.id!,
+                              busId: currentBus.id!,
                             );
                           },
                         ),
@@ -560,10 +901,17 @@ class BusDetailsScreen extends ConsumerWidget {
                         onDelete: () async {
                           Navigator.pop(context);
 
+                          if (currentBus.id != null) {
+                            await BusLocalImageService.instance
+                                .deleteBusImages(currentBus.id!);
+                            await LicenseNotificationService.instance
+                                .cancelBusLicenseNotifications(currentBus.id!);
+                          }
+
                           final success = await ref
                               .read(busProvider.notifier)
                               .deleteBus(
-                            busId: bus.id!,
+                            busId: currentBus.id!,
                           );
 
                           if (!context.mounted) return;
@@ -583,6 +931,7 @@ class BusDetailsScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

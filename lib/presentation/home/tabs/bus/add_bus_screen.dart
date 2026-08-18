@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elostaz_travel/core/dimens/dimens.dart';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
+import 'package:elostaz_travel/core/services/license_notification_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
@@ -79,7 +80,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: CustomAppBar(
-        title: "إضافة أتوبيس",
+        title: "إضافة عربية",
         fontColor: AppColors.white,
         onPressed: () => NavigatorHandler.pop(),
         centerTitle: true,
@@ -119,15 +120,15 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                       children: [
                         CustomText(title: "البيانات الأساسية", fontSize: 18.sp),
                         SizedBox(height: 16.h),
-                        CustomText(title: "اسم الأتوبيس"),
+                        CustomText(title: "اسم العربية"),
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: busNameController,
-                          hint: "ادخل اسم الاتوبيس",
+                          hint: "ادخل اسم العربية",
                           textInputType: TextInputType.text,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return "اسم الأتوبيس مطلوب";
+                              return "اسم العربية مطلوب";
                             }
                             return null;
                           },
@@ -326,15 +327,15 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                                 child: GestureDetector(
                                   onTap: () {
                                     ref.read(specialRequirementsProvider.notifier).state =
-                                    'محظورة من البيع';
+                                    'محظورة بيع';
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: specialRequirement == 'محظورة من البيع'
+                                      color: specialRequirement == 'محظورة بيع'
                                           ? Colors.white
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(13),
-                                      boxShadow: specialRequirement == 'محظورة من البيع'
+                                      boxShadow: specialRequirement == 'محظورة بيع'
                                           ? [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.08),
@@ -346,10 +347,10 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      'محظورة من البيع',
+                                      'محظورة بيع',
                                       style: TextStyle(
                                         fontSize: 18,
-                                        color: specialRequirement == 'محظورة من البيع'
+                                        color: specialRequirement == 'محظورة البيع'
                                             ? const Color(0xFF172B4D)
                                             : const Color(0xFF454545),
                                       ),
@@ -579,6 +580,12 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                     await ref.read(busProvider.notifier).addBus(
                       bus: bus,
                     );
+
+                    final state = ref.read(busProvider);
+                    if (!state.hasError) {
+                      await LicenseNotificationService.instance
+                          .scheduleBusLicenseNotifications(bus);
+                    }
 
                     if (mounted) {
                       NavigatorHandler.pop();

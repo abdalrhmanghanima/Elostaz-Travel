@@ -7,7 +7,9 @@ class AppColors{
   static const Color lightGray= Color(0XFFEEEEEE);
   static const Color borderGray = Color(0xFFDADADA);
   static const Color lightGreen = Color(0xFFE6F4EA);
+  static const Color green = Color(0xFF2E7D32);
   static const Color lightYellow = Color(0xFFFEF7E0);
+  static const Color warning = Color(0xFFF57C00);
   static const Color red= Color(0XFFDF1C26);
   static const Color lightRed = Color(0X0DDF1C26);
   static const Color darkRed = Color(0xFFDF1C26);
@@ -19,4 +21,4 @@ class AppColors{
   static const Color inputStroke = Color(0xffE9E9E9);
   static const Color inputBg = Color(0xffF8F8F8);
   static const Color borderGrayLight = Color(0xffE4D9C4);
-}
+}

@@ -41,4 +41,17 @@ class TripRepositoryImpl implements TripRepository {
   Future<List<TripEntity>> getDriverTrips(String driverId) {
     return remoteDataSource.getDriverTrips(driverId);
   }
+
+  @override
+  Future<List<TripEntity>> getAllTrips() {
+    return remoteDataSource.getAllTrips();
+  }
+
+  @override
+  Future<List<TripEntity>> getMonthlyTrips({
+    required int year,
+    required int month,
+  }) {
+    return remoteDataSource.getMonthlyTrips(year: year, month: month);
+  }
 }

@@ -70,37 +70,12 @@ class BusRemoteDataSourceImpl implements BusRemoteDataSource {
   }) async {
     final docRef = _busesCollection.doc(bus.id);
 
-    final snapshot = await docRef.get();
-
-    final data = snapshot.data();
-
-    final oldExpiryDate =
-    data?['licenseExpiryDate'] is Timestamp
-        ? (data!['licenseExpiryDate'] as Timestamp).toDate()
-        : null;
-
-    final isLicenseDateChanged =
-        oldExpiryDate == null ||
-            oldExpiryDate.year != bus.licenseExpiryDate.year ||
-            oldExpiryDate.month != bus.licenseExpiryDate.month ||
-            oldExpiryDate.day != bus.licenseExpiryDate.day;
-
     final updateData = <String, dynamic>{
       'busName': bus.busName,
-      'licenseExpiryDate':
-      Timestamp.fromDate(bus.licenseExpiryDate),
+      'licenseExpiryDate': Timestamp.fromDate(bus.licenseExpiryDate),
       'licenseImageUrl': bus.licenseImageUrl,
       'busImageUrl': bus.busImageUrl,
     };
-
-    if (isLicenseDateChanged) {
-      updateData['licenseNotificationFlags'] = {
-        '30': false,
-        '7': false,
-        '1': false,
-        'expired': false,
-      };
-    }
 
     await docRef.update(updateData);
   }

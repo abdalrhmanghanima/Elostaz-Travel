@@ -2,8 +2,11 @@ class AppIcons {
   static const String phone = 'assets/icons/phone.svg';
   static const String lock = 'assets/icons/lock.svg';
   static const String bus = 'assets/icons/bus.svg';
+  static const String busFilled = 'assets/icons/bus_filled.svg';
   static const String home = 'assets/icons/home.svg';
+  static const String homeFilled = 'assets/icons/home_filled.svg';
   static const String notification = 'assets/icons/notification.svg';
+  static const String notificationFilled = 'assets/icons/notification_filled.svg';
   static const String notificationWhite = 'assets/icons/notification_white.svg';
   static const String settings = 'assets/icons/settings.svg';
   static const String valid = 'assets/icons/valid.svg';
@@ -20,6 +23,7 @@ class AppIcons {
   static const String info = 'assets/icons/info.svg';
   static const String plate = 'assets/icons/plate.svg';
   static const String person = 'assets/icons/person.svg';
+  static const String personFilled = 'assets/icons/person_filled.svg';
   static const String trip = 'assets/icons/trip.svg';
   static const String more = 'assets/icons/more.svg';
 }
