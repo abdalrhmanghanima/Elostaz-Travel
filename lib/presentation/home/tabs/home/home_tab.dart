@@ -3,7 +3,10 @@ import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
+import 'package:elostaz_travel/core/utils/text_styles.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
+import 'package:elostaz_travel/presentation/auth/provider/logout_provider.dart';
+import 'package:elostaz_travel/presentation/auth/screen/login_screen.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
 import 'package:elostaz_travel/presentation/components/custom_svg/custom_svg_icon.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
@@ -36,9 +39,96 @@ class HomeTab extends ConsumerWidget {
             onTap: () {
               ref.read(bottomNavProvider.notifier).state = 3;
             },
-            child: Padding(
-              padding: EdgeInsets.only(right: 20.r),
-              child: CustomSvgIcon(assetName: AppIcons.notificationWhite),
+            child: SizedBox(
+              width: 44.w,
+              height: 44.h,
+              child: Center(
+                child: CustomSvgIcon(assetName: AppIcons.notificationWhite),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (dialogContext) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    title: Text(
+                      "تسجيل الخروج",
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles().normalText().textColorNormal(
+                        AppColors.black,
+                      ),
+                    ),
+                    content: Text(
+                      "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles().normalText().textColorNormal(
+                        AppColors.black,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                        },
+                        child: Text(
+                          "إلغاء",
+                          style: AppTextStyles().normalText().textColorNormal(
+                            AppColors.black,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(dialogContext);
+
+                          await ref.read(logoutProvider.notifier).logout();
+
+                          if (!context.mounted) return;
+
+                          final logoutState = ref.read(logoutProvider);
+
+                          if (logoutState.hasError) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "حدث خطأ أثناء تسجيل الخروج",
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          // بعد نجاح Logout
+                          NavigatorHandler.pushAndRemoveUntil(LoginScreen());
+                        },
+                        child: Text(
+                          "تسجيل الخروج",
+                          style: AppTextStyles().normalText().textColorNormal(
+                            AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: SizedBox(
+              width: 44.w,
+              height: 44.h,
+              child: Center(
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.white,
+                  size: 24.w,
+                ),
+              ),
             ),
           ),
         ],
@@ -78,99 +168,100 @@ class HomeTab extends ConsumerWidget {
                 top: 20.h,
                 bottom: 10.h,
               ),
-            child: Column(
-              children: [
-                // ── Row 1: Valid licenses  |  Total buses ──────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        value: stats.validLicenseCount.toString(),
-                        label: "التراخيص السارية",
-                        iconAsset: AppIcons.valid,
-                        iconBgColor: AppColors.lightGreen,
+              child: Column(
+                children: [
+                  // ── Row 1: Valid licenses  |  Total buses ──────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          value: stats.validLicenseCount.toString(),
+                          label: "التراخيص السارية",
+                          iconAsset: AppIcons.valid,
+                          iconBgColor: AppColors.lightGreen,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: _StatCard(
-                        value: stats.totalBuses.toString(),
-                        label: "إجمالي الأتوبيسات",
-                        iconAsset: AppIcons.bus,
-                        iconBgColor: AppColors.lightGray,
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _StatCard(
+                          value: stats.totalBuses.toString(),
+                          label: "إجمالي الأتوبيسات",
+                          iconAsset: AppIcons.bus,
+                          iconBgColor: AppColors.lightGray,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10.h),
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
 
-                // ── Row 2: Expired  |  Expiring soon ───────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        value: stats.expiredBuses.length.toString(),
-                        label: "التراخيص المنتهية",
-                        iconAsset: AppIcons.unValid,
-                        iconBgColor: AppColors.lightRed,
+                  // ── Row 2: Expired  |  Expiring soon ───────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          value: stats.expiredBuses.length.toString(),
+                          label: "التراخيص المنتهية",
+                          iconAsset: AppIcons.unValid,
+                          iconBgColor: AppColors.lightRed,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: _StatCard(
-                        value: stats.busesExpiringWithin30Days.length.toString(),
-                        label: "تنتهي قريبًا",
-                        iconAsset: AppIcons.warning,
-                        iconBgColor: AppColors.lightYellow,
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _StatCard(
+                          value: stats.busesExpiringWithin30Days.length
+                              .toString(),
+                          label: "تنتهي قريبًا",
+                          iconAsset: AppIcons.warning,
+                          iconBgColor: AppColors.lightYellow,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10.h),
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
 
-                // ── Row 3: Current-month trips  |  Total drivers ────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        value: stats.currentMonthTripCount.toString(),
-                        label: "رحلات هذا الشهر",
-                        iconAsset: AppIcons.trip,
-                        iconBgColor: AppColors.lightGray,
+                  // ── Row 3: Current-month trips  |  Total drivers ────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          value: stats.currentMonthTripCount.toString(),
+                          label: "رحلات هذا الشهر",
+                          iconAsset: AppIcons.trip,
+                          iconBgColor: AppColors.lightGray,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: _StatCard(
-                        value: stats.totalDrivers.toString(),
-                        label: "إجمالي السائقين",
-                        iconAsset: AppIcons.person,
-                        iconBgColor: AppColors.lightGray,
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _StatCard(
+                          value: stats.totalDrivers.toString(),
+                          label: "إجمالي السائقين",
+                          iconAsset: AppIcons.person,
+                          iconBgColor: AppColors.lightGray,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
+                    ],
+                  ),
+                  SizedBox(height: 18.h),
 
-                // ── Upcoming / action list ──────────────────────────────────
-                _UpcomingLicensesCard(
-                  expiringSoon: stats.busesExpiringWithin30Days,
-                  expired: stats.expiredBuses,
-                ),
-                SizedBox(height: 18.h),
+                  // ── Upcoming / action list ──────────────────────────────────
+                  _UpcomingLicensesCard(
+                    expiringSoon: stats.busesExpiringWithin30Days,
+                    expired: stats.expiredBuses,
+                  ),
+                  SizedBox(height: 18.h),
 
-                // ── Financial summary ───────────────────────────────────────
-                GestureDetector(
-                  onTap: () => NavigatorHandler.push(const FinancialSummaryScreen()),
-                  child: _FinancialSummaryCard(stats: stats),
-                ),
-
-              ]
+                  // ── Financial summary ───────────────────────────────────────
+                  GestureDetector(
+                    onTap: () =>
+                        NavigatorHandler.push(const FinancialSummaryScreen()),
+                    child: _FinancialSummaryCard(stats: stats),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      )
     );
   }
 }
@@ -274,9 +365,7 @@ class _UpcomingLicensesCard extends ConsumerWidget {
     ];
 
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: allItems.isEmpty ? 120.h : 360.h,
-      ),
+      constraints: BoxConstraints(maxHeight: allItems.isEmpty ? 120.h : 360.h),
       width: Dimens.width,
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -323,7 +412,9 @@ class _UpcomingLicensesCard extends ConsumerWidget {
                   itemCount: allItems.length,
                   itemBuilder: (context, index) {
                     final item = allItems[index];
-                    final color = item.isExpired ? AppColors.red : AppColors.warning;
+                    final color = item.isExpired
+                        ? AppColors.red
+                        : AppColors.warning;
                     final subtitle = item.isExpired
                         ? 'انتهت الرخصة'
                         : 'تنتهي خلال ${item.daysLeft} ${item.daysLeft == 1 ? 'يوم' : 'أيام'}';
@@ -410,16 +501,16 @@ class _LicenseItem {
 // ────────────────────────────────────────────────────────────────────────────
 
 class _FinancialSummaryCard extends StatelessWidget {
-  const _FinancialSummaryCard({
-    required this.stats,
-  });
+  const _FinancialSummaryCard({required this.stats});
 
   final HomeStats stats;
 
-  String _fmt(double v) => v.toStringAsFixed(0).replaceAllMapped(
-    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+  String _fmt(double v) => v
+      .toStringAsFixed(0)
+      .replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (m) => '${m[1]},',
-  );
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -465,30 +556,20 @@ class _FinancialSummaryCard extends StatelessWidget {
 
                     SizedBox(width: 8.w),
 
-                    const Icon(
-                      Icons.wallet,
-                    ),
+                    const Icon(Icons.wallet),
                   ],
                 ),
               ],
             ),
           ),
 
-          Divider(
-            color: AppColors.backgroundGray,
-            height: 3,
-            thickness: 2,
-          ),
+          Divider(color: AppColors.backgroundGray, height: 3, thickness: 2),
 
           // ─────────────────────────────────────────────
           // Expenses + Revenue
           // ─────────────────────────────────────────────
           Padding(
-            padding: EdgeInsets.only(
-              left: 12.w,
-              right: 12.w,
-              top: 16.h,
-            ),
+            padding: EdgeInsets.only(left: 12.w, right: 12.w, top: 16.h),
             child: Row(
               children: [
                 // Expenses
@@ -523,18 +604,13 @@ class _FinancialSummaryCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CustomText(
-                            title: "ج.م",
-                            fontSize: 18.sp,
-                          ),
+                          CustomText(title: "ج.م", fontSize: 18.sp),
 
                           SizedBox(width: 4.w),
 
                           Flexible(
                             child: CustomText(
-                              title: _fmt(
-                                stats.currentMonthExpenses,
-                              ),
+                              title: _fmt(stats.currentMonthExpenses),
                               fontSize: 18.sp,
                               maxLines: 1,
                             ),
@@ -579,18 +655,13 @@ class _FinancialSummaryCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CustomText(
-                            title: "ج.م",
-                            fontSize: 18.sp,
-                          ),
+                          CustomText(title: "ج.م", fontSize: 18.sp),
 
                           SizedBox(width: 4.w),
 
                           Flexible(
                             child: CustomText(
-                              title: _fmt(
-                                stats.currentMonthRevenue,
-                              ),
+                              title: _fmt(stats.currentMonthRevenue),
                               fontSize: 18.sp,
                               maxLines: 1,
                             ),
@@ -606,21 +677,13 @@ class _FinancialSummaryCard extends StatelessWidget {
 
           SizedBox(height: 16.h),
 
-          Divider(
-            color: AppColors.backgroundGray,
-            height: 3,
-            thickness: 2,
-          ),
+          Divider(color: AppColors.backgroundGray, height: 3, thickness: 2),
 
           // ─────────────────────────────────────────────
           // Net Revenue + Trips
           // ─────────────────────────────────────────────
           Padding(
-            padding: EdgeInsets.only(
-              left: 12.w,
-              right: 12.w,
-              top: 16.h,
-            ),
+            padding: EdgeInsets.only(left: 12.w, right: 12.w, top: 16.h),
             child: Row(
               children: [
                 // Net Revenue
@@ -640,21 +703,15 @@ class _FinancialSummaryCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CustomText(
-                            title: "ج.م",
-                            fontSize: 18.sp,
-                          ),
+                          CustomText(title: "ج.م", fontSize: 18.sp),
 
                           SizedBox(width: 4.w),
 
                           Flexible(
                             child: CustomText(
-                              title: _fmt(
-                                stats.currentMonthNetRevenue,
-                              ),
+                              title: _fmt(stats.currentMonthNetRevenue),
                               fontSize: 18.sp,
-                              fontColor:
-                              stats.currentMonthNetRevenue >= 0
+                              fontColor: stats.currentMonthNetRevenue >= 0
                                   ? AppColors.green
                                   : AppColors.red,
                               maxLines: 1,
