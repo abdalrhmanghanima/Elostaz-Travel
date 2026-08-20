@@ -236,112 +236,91 @@ class BusDetailsScreen extends ConsumerWidget {
           child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.only(
-                left: 16.w,
-                right: 16.w,
-                top: 16.h,
+              padding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 10.h,
               ),
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  vertical: 10.h,
-                  horizontal: 8.w,
-                ),
+                padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: AppColors.backgroundGray,
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // =========================
                     // البيانات
+                    // =========================
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(
-                          right: 8.w,
-                          left: 4.w,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 6.h,
                         ),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             // اسم العربية
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                CustomText(
-                                  title: 'اسم العربية',
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w600,
-                                  fontColor: AppColors.darkGray,
-                                ),
-                                SizedBox(height: 3.h),
-                                CustomText(
-                                  title: currentBus.busName,
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w700,
-                                  textAlign: TextAlign.right,
-                                ),
-                              ],
+                            _BusInfoItem(
+                              title: 'اسم العربية',
+                              value: currentBus.busName,
+                              icon: Icons.directions_bus_rounded,
                             ),
 
-                            SizedBox(height: 12.h),
+                            SizedBox(height: 18.h),
 
                             // نمرة العربية
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                CustomText(
-                                  title: 'نمرة العربية',
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w600,
-                                  fontColor: AppColors.darkGray,
-                                ),
-                                SizedBox(height: 3.h),
-                                CustomText(
-                                  title: currentBus.plateNumber,
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w700,
-                                  textAlign: TextAlign.right,
-                                ),
-                              ],
+                            _BusInfoItem(
+                              title: 'نمرة العربية',
+                              value: currentBus.plateNumber,
+                              icon: Icons.confirmation_number_rounded,
                             ),
                           ],
                         ),
                       ),
                     ),
 
-                    SizedBox(width: 8.w),
+                    // فاصل
+                    Container(
+                      width: 1.w,
+                      height: 90.h,
+                      color: AppColors.darkGray.withOpacity(.15),
+                    ),
 
+                    SizedBox(width: 10.w),
+
+                    // =========================
                     // صورة الأتوبيس
+                    // =========================
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16.r),
                       child: localBusImage != null
                           ? Image.file(
                         localBusImage,
-                        width: 140.w,
-                        height: 125.h,
+                        width: 125.w,
+                        height: 115.h,
                         fit: BoxFit.cover,
                       )
                           : currentBus.busImageUrl != null &&
                           currentBus.busImageUrl!.isNotEmpty
                           ? Image.network(
                         currentBus.busImageUrl!,
-                        width: 140.w,
-                        height: 125.h,
+                        width: 125.w,
+                        height: 115.h,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) {
                           return CustomAssetImage(
                             assetName: AppAssets.defaultBus,
-                            width: 140.w,
-                            height: 125.h,
+                            width: 125.w,
+                            height: 115.h,
                           );
                         },
                       )
                           : CustomAssetImage(
                         assetName: AppAssets.defaultBus,
-                        width: 140.w,
-                        height: 125.h,
+                        width: 125.w,
+                        height: 115.h,
                       ),
                     ),
                   ],
@@ -933,6 +912,63 @@ class BusDetailsScreen extends ConsumerWidget {
         ),
       ),
       ),
+    );
+  }
+}
+class _BusInfoItem extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+
+  const _BusInfoItem({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              CustomText(
+                title: title,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                fontColor: AppColors.darkGray,
+              ),
+              SizedBox(height: 4.h),
+              CustomText(
+                title: value,
+                fontSize: 17.sp,
+                fontWeight: FontWeight.w700,
+                textAlign: TextAlign.right,
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(width: 8.w),
+
+        Container(
+          width: 34.w,
+          height: 34.w,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(.1),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Icon(
+            icon,
+            size: 19.sp,
+            color: AppColors.primary,
+          ),
+        ),
+      ],
     );
   }
 }

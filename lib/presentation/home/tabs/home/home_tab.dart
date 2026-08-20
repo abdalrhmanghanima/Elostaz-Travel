@@ -176,7 +176,7 @@ class HomeTab extends ConsumerWidget {
                       Expanded(
                         child: _StatCard(
                           value: stats.validLicenseCount.toString(),
-                          label: "التراخيص السارية",
+                          label: "رخص سارية",
                           iconAsset: AppIcons.valid,
                           iconBgColor: AppColors.lightGreen,
                         ),
@@ -185,7 +185,7 @@ class HomeTab extends ConsumerWidget {
                       Expanded(
                         child: _StatCard(
                           value: stats.totalBuses.toString(),
-                          label: "إجمالي الأتوبيسات",
+                          label: "العربيات",
                           iconAsset: AppIcons.bus,
                           iconBgColor: AppColors.lightGray,
                         ),
@@ -200,7 +200,7 @@ class HomeTab extends ConsumerWidget {
                       Expanded(
                         child: _StatCard(
                           value: stats.expiredBuses.length.toString(),
-                          label: "التراخيص المنتهية",
+                          label: "رخص منتهية",
                           iconAsset: AppIcons.unValid,
                           iconBgColor: AppColors.lightRed,
                         ),
@@ -225,7 +225,7 @@ class HomeTab extends ConsumerWidget {
                       Expanded(
                         child: _StatCard(
                           value: stats.currentMonthTripCount.toString(),
-                          label: "رحلات هذا الشهر",
+                          label: "رحلات الشهر",
                           iconAsset: AppIcons.trip,
                           iconBgColor: AppColors.lightGray,
                         ),
@@ -234,7 +234,7 @@ class HomeTab extends ConsumerWidget {
                       Expanded(
                         child: _StatCard(
                           value: stats.totalDrivers.toString(),
-                          label: "إجمالي السائقين",
+                          label: "السائقين",
                           iconAsset: AppIcons.person,
                           iconBgColor: AppColors.lightGray,
                         ),
@@ -302,7 +302,7 @@ class _StatCard extends StatelessWidget {
               Flexible(
                 child: CustomText(
                   title: value,
-                  fontSize: 26.sp,
+                  fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
                   maxLines: 1,
                 ),
