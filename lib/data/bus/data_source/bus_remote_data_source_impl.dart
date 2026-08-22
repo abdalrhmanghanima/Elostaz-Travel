@@ -50,7 +50,9 @@ class BusRemoteDataSourceImpl implements BusRemoteDataSource {
         busName: bus.busName,
         plateNumber: bus.plateNumber,
         brand: bus.brand,
-        modelYear: bus.modelYear,
+        model: bus.model,
+        manufacturingYear: bus.manufacturingYear,
+        modelYear: bus.manufacturingYear ?? bus.modelYear,
         chassisNumber: bus.chassisNumber,
         engineNumber: bus.engineNumber,
         passengerCount: bus.passengerCount,
@@ -72,6 +74,9 @@ class BusRemoteDataSourceImpl implements BusRemoteDataSource {
 
     final updateData = <String, dynamic>{
       'busName': bus.busName,
+      'model': bus.model,
+      if (bus.manufacturingYear != null) 'manufacturingYear': bus.manufacturingYear,
+      'modelYear': bus.manufacturingYear ?? bus.modelYear,
       'licenseExpiryDate': Timestamp.fromDate(bus.licenseExpiryDate),
       'licenseImageUrl': bus.licenseImageUrl,
       'busImageUrl': bus.busImageUrl,

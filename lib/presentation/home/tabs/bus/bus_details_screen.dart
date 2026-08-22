@@ -158,6 +158,8 @@ class BusDetailsScreen extends ConsumerWidget {
                         onSave: ({
                           required String busName,
                           required DateTime licenseExpiryDate,
+                          String? model,
+                          int? manufacturingYear,
                           File? busImage,
                           File? licenseImage,
                         }) async {
@@ -167,7 +169,9 @@ class BusDetailsScreen extends ConsumerWidget {
                               busName: busName,
                               plateNumber: currentBus.plateNumber,
                               brand: currentBus.brand,
-                              modelYear: currentBus.modelYear,
+                              model: model ?? currentBus.model,
+                              manufacturingYear: manufacturingYear ?? currentBus.manufacturingYear,
+                              modelYear: manufacturingYear ?? currentBus.modelYear,
                               chassisNumber: currentBus.chassisNumber,
                               engineNumber: currentBus.engineNumber,
                               passengerCount: currentBus.passengerCount,
@@ -487,7 +491,49 @@ class BusDetailsScreen extends ConsumerWidget {
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: CustomText(
-                                title: "${currentBus.brand} :${currentBus.modelYear}",
+                                title: currentBus.model.isNotEmpty
+                                    ? currentBus.model
+                                    : (currentBus.brand.isNotEmpty
+                                        ? currentBus.brand
+                                        : "غير محدد"),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                maxLines: 2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ================= سنة الصنع =================
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: CustomText(
+                                title: "سنة الصنع",
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                title: (currentBus.manufacturingYear != null &&
+                                        currentBus.manufacturingYear! > 0)
+                                    ? "${currentBus.manufacturingYear}"
+                                    : (currentBus.modelYear > 0
+                                        ? "${currentBus.modelYear}"
+                                        : "غير محدد"),
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w700,
                                 maxLines: 2,

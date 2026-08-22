@@ -26,4 +26,6 @@ class AppIcons {
   static const String personFilled = 'assets/icons/person_filled.svg';
   static const String trip = 'assets/icons/trip.svg';
   static const String more = 'assets/icons/more.svg';
+  static const String factory = 'assets/icons/factory.svg';
+  static const String factoryFilled = 'assets/icons/factory_filled.svg';
 }

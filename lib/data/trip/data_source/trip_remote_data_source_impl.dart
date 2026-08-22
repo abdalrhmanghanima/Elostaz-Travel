@@ -38,16 +38,38 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
         .collection('drivers');
   }
 
+  CollectionReference<Map<String, dynamic>> _factories() {
+    final user = auth.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    return firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('factories');
+  }
+
   @override
   Future<void> addTrip(TripModel trip) async {
     final tripRef = _trips().doc();
     final driverRef = _drivers().doc(trip.driverId);
+    final DocumentReference<Map<String, dynamic>>? factoryRef =
+        (trip.factoryId != null && trip.factoryId!.isNotEmpty)
+            ? _factories().doc(trip.factoryId)
+            : null;
 
     await firestore.runTransaction((transaction) async {
       final driverSnapshot = await transaction.get(driverRef);
 
       if (!driverSnapshot.exists) {
         throw Exception('Driver not found');
+      }
+
+      DocumentSnapshot<Map<String, dynamic>>? factorySnapshot;
+      if (factoryRef != null) {
+        factorySnapshot = await transaction.get(factoryRef);
       }
 
       transaction.set(
@@ -62,6 +84,18 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
           'totalRevenue': FieldValue.increment(trip.revenue),
         },
       );
+
+      if (factoryRef != null &&
+          factorySnapshot != null &&
+          factorySnapshot.exists) {
+        transaction.update(
+          factoryRef,
+          {
+            'tripsCount': FieldValue.increment(1),
+            'totalRevenue': FieldValue.increment(trip.revenue),
+          },
+        );
+      }
     });
   }
 
@@ -79,6 +113,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       final tripData = tripSnapshot.data() ?? {};
 
       final driverId = tripData['driverId'] as String?;
+      final factoryId = tripData['factoryId'] as String?;
       final revenue = (tripData['revenue'] as num?)?.toDouble() ?? 0;
 
       if (driverId == null || driverId.isEmpty) {
@@ -86,11 +121,17 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       }
 
       final driverRef = _drivers().doc(driverId);
-
       final driverSnapshot = await transaction.get(driverRef);
 
       if (!driverSnapshot.exists) {
         throw Exception('Driver not found');
+      }
+
+      DocumentReference<Map<String, dynamic>>? factoryRef;
+      DocumentSnapshot<Map<String, dynamic>>? factorySnapshot;
+      if (factoryId != null && factoryId.isNotEmpty) {
+        factoryRef = _factories().doc(factoryId);
+        factorySnapshot = await transaction.get(factoryRef);
       }
 
       transaction.delete(tripRef);
@@ -102,6 +143,18 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
           'totalRevenue': FieldValue.increment(-revenue),
         },
       );
+
+      if (factoryRef != null &&
+          factorySnapshot != null &&
+          factorySnapshot.exists) {
+        transaction.update(
+          factoryRef,
+          {
+            'tripsCount': FieldValue.increment(-1),
+            'totalRevenue': FieldValue.increment(-revenue),
+          },
+        );
+      }
     });
   }
 
@@ -128,24 +181,55 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
     try {
       final snapshot = await _trips()
           .where(
-        'driverId',
-        isEqualTo: driverId,
-      )
+            'driverId',
+            isEqualTo: driverId,
+          )
           .orderBy(
-        'createdAt',
-        descending: true,
-      )
+            'createdAt',
+            descending: true,
+          )
           .get();
 
       return snapshot.docs
           .map(
             (doc) => TripModel.fromFirestore(doc),
-      )
+          )
           .toList();
     } catch (e, stackTrace) {
       print('GET DRIVER TRIPS ERROR: $e');
       print(stackTrace);
       rethrow;
+    }
+  }
+
+  @override
+  Future<List<TripModel>> getFactoryTrips(String factoryId) async {
+    try {
+      final snapshot = await _trips()
+          .where('factoryId', isEqualTo: factoryId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+    } catch (e, stackTrace) {
+      print('GET FACTORY TRIPS ERROR: $e');
+      print(stackTrace);
+      // If composite index is pending, fallback to query by factoryId and sort in memory
+      try {
+        final fallbackSnapshot = await _trips()
+            .where('factoryId', isEqualTo: factoryId)
+            .get();
+
+        final trips = fallbackSnapshot.docs
+            .map((doc) => TripModel.fromFirestore(doc))
+            .toList();
+        trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return trips;
+      } catch (_) {
+        rethrow;
+      }
     }
   }
 

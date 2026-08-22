@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================
+    // Users
+    // =========================
+    match /users/{userId} {
+
+      // User document
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+
+
+      // =========================
+      // Buses
+      // =========================
+      match /buses/{busId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+
+
+      // =========================
+      // Drivers
+      // =========================
+      match /drivers/{driverId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+
+
+        // =========================
+        // Driver Advances
+        // =========================
+        match /advances/{advanceId} {
+          allow read, write: if request.auth != null
+                             && request.auth.uid == userId;
+        }
+      }
+
+
+      // =========================
+      // Trips
+      // =========================
+      match /trips/{tripId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+
+
+      // =========================
+      // Factories
+      // =========================
+      match /factories/{factoryId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+
+
+        // Factory Trips
+        match /trips/{tripId} {
+          allow read, write: if request.auth != null
+                             && request.auth.uid == userId;
+        }
+      }
+
+
+      // =========================
+      // Meta / Test Data
+      // =========================
+      match /meta/{documentId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+    }
+  }
+}

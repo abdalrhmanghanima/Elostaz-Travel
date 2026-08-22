@@ -3,6 +3,8 @@ class BusEntity {
   final String busName;
   final String plateNumber;
   final String brand;
+  final String model;
+  final int? manufacturingYear;
   final int modelYear;
   final String chassisNumber;
   final String engineNumber;
@@ -19,7 +21,9 @@ class BusEntity {
     required this.busName,
     required this.plateNumber,
     required this.brand,
-    required this.modelYear,
+    this.model = '',
+    this.manufacturingYear,
+    this.modelYear = 0,
     required this.chassisNumber,
     required this.engineNumber,
     required this.passengerCount,

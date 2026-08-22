@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
+import 'package:elostaz_travel/core/services/driver_local_image_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
@@ -65,7 +67,10 @@ class _DriversTabState extends ConsumerState<DriversTab> {
             builder: (_) => const AddDriverBottomSheet(),
           );
           if (result == null) return;
-          await ref
+          final File? idCardImage = result['idCardImage'] as File?;
+          final File? licenseImage = result['licenseImage'] as File?;
+
+          final driverId = await ref
               .read(driversProvider.notifier)
               .addDriver(
                 name: result['name'],
@@ -73,6 +78,17 @@ class _DriversTabState extends ConsumerState<DriversTab> {
                 totalRevenue: result['totalRevenue'],
                 tripsCount: result['tripsCount'],
               );
+
+          if (driverId != null) {
+            if (idCardImage != null) {
+              await DriverLocalImageService.instance
+                  .saveIdCardImage(driverId, idCardImage);
+            }
+            if (licenseImage != null) {
+              await DriverLocalImageService.instance
+                  .saveLicenseImage(driverId, licenseImage);
+            }
+          }
         },
         leadingHeight: 19.h,
       ),
@@ -157,7 +173,7 @@ class _DriversTabState extends ConsumerState<DriversTab> {
                             vertical: 27.h,
                           ),
                           itemCount: filteredDrivers.length,
-                          separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                          separatorBuilder: (_, _) => SizedBox(height: 12.h),
                           itemBuilder: (context, index) {
                             final driver = filteredDrivers[index];
 
@@ -177,7 +193,7 @@ class _DriversTabState extends ConsumerState<DriversTab> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(.04),
+                                    color: Colors.black.withValues(alpha: 0.04),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),

@@ -6,11 +6,13 @@ import 'package:elostaz_travel/presentation/home/provider/bottom_nav_provider.da
 import 'package:elostaz_travel/presentation/home/tabs/bus/bus_tab.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/driver_tab.dart';
+import 'package:elostaz_travel/presentation/home/tabs/factory/factory_tab.dart';
 import 'package:elostaz_travel/presentation/home/tabs/home/home_tab.dart';
 import 'package:elostaz_travel/presentation/home/tabs/notifications/notifications_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,12 +23,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _hasScheduledExistingBuses = false;
 
-  final List<Widget> screens = [
+  final List<Widget> screens = const [
     HomeTab(),
     BusTab(),
     DriversTab(),
+    FactoryTab(),
     NotificationsTab(),
-
   ];
 
   @override
@@ -48,15 +50,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       });
     }, fireImmediately: true);
   }
+
   @override
   Widget build(BuildContext context) {
-    final currentScreen= ref.watch(bottomNavProvider);
+    final currentScreen = ref.watch(bottomNavProvider);
     return Scaffold(
       body: IndexedStack(
         index: currentScreen,
         children: screens,
       ),
-
       bottomNavigationBar: Container(
         height: 85.h,
         decoration: BoxDecoration(
@@ -70,25 +72,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-
         child: BottomNavigationBar(
           elevation: 0,
           backgroundColor: AppColors.white,
           type: BottomNavigationBarType.fixed,
-
           currentIndex: currentScreen,
-
           onTap: (index) {
             ref.read(bottomNavProvider.notifier).state = index;
           },
-
           showSelectedLabels: true,
           showUnselectedLabels: true,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: Colors.black,
-          selectedFontSize: 14.sp,
-          unselectedFontSize: 13.sp,
-
+          selectedFontSize: 13.sp,
+          unselectedFontSize: 12.sp,
           items: [
             BottomNavigationBarItem(
               icon: Transform.translate(
@@ -101,7 +98,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               label: 'الرئيسية',
             ),
-
             BottomNavigationBarItem(
               icon: Transform.translate(
                 offset: Offset(0, -1.h),
@@ -124,19 +120,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               label: 'السواقين',
             ),
-
+            BottomNavigationBarItem(
+              icon: Transform.translate(
+                offset: Offset(0, -1.h),
+                child: _AnimatedNavBarIcon(
+                  assetName: AppIcons.factory,
+                  filledAssetName: AppIcons.factoryFilled,
+                  isSelected: currentScreen == 3,
+                ),
+              ),
+              label: 'المصانع',
+            ),
             BottomNavigationBarItem(
               icon: Transform.translate(
                 offset: Offset(0, -1.h),
                 child: _AnimatedNavBarIcon(
                   assetName: AppIcons.notification,
                   filledAssetName: AppIcons.notificationFilled,
-                  isSelected: currentScreen == 3,
+                  isSelected: currentScreen == 4,
                 ),
               ),
               label: 'التنبيهات',
             ),
-
           ],
         ),
       ),
@@ -202,4 +207,3 @@ class _AnimatedNavBarIcon extends StatelessWidget {
     );
   }
 }
-

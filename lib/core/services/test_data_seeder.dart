@@ -183,6 +183,8 @@ class TestDataSeeder {
         'busName': b.name,
         'plateNumber': b.plate,
         'brand': b.brand,
+        'model': b.brand,
+        'manufacturingYear': b.year,
         'modelYear': b.year,
         'chassisNumber': b.chassis,
         'engineNumber': b.engine,

@@ -38,7 +38,7 @@ void main() {
       validLicenseCount: 5,
     );
 
-    testWidgets('TEST A: Tapping notification bell icon on HomeTab changes bottomNavProvider to 3',
+    testWidgets('TEST A: Tapping notification bell icon on HomeTab changes bottomNavProvider to 4',
         (tester) async {
       final container = ProviderContainer(
         overrides: [
@@ -64,7 +64,7 @@ void main() {
       final bellFinder = find.byWidgetPredicate(
         (widget) =>
             widget is GestureDetector &&
-            widget.child is Padding,
+            widget.child is SizedBox,
       );
       expect(bellFinder, findsWidgets);
 
@@ -72,11 +72,11 @@ void main() {
       await tester.tap(bellFinder.first);
       await tester.pumpAndSettle();
 
-      // Verify bottomNavProvider index changed to 3 (NotificationsTab)
-      expect(container.read(bottomNavProvider), equals(3));
+      // Verify bottomNavProvider index changed to 4 (NotificationsTab)
+      expect(container.read(bottomNavProvider), equals(4));
     });
 
-    testWidgets('TEST B: Tapping "عرض الكل" in "يحتاج إجراء" changes bottomNavProvider to 3',
+    testWidgets('TEST B: Tapping "عرض الكل" in "يحتاج إجراء" changes bottomNavProvider to 4',
         (tester) async {
       final container = ProviderContainer(
         overrides: [
@@ -110,8 +110,8 @@ void main() {
       await tester.tap(showAllFinder);
       await tester.pumpAndSettle();
 
-      // Verify bottomNavProvider index changed to 3 (NotificationsTab)
-      expect(container.read(bottomNavProvider), equals(3));
+      // Verify bottomNavProvider index changed to 4 (NotificationsTab)
+      expect(container.read(bottomNavProvider), equals(4));
     });
   });
 }

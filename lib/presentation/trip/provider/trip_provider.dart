@@ -13,6 +13,7 @@ import 'package:elostaz_travel/domain/trip/use_case/add_trip_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/delete_trip_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_use_case.dart';
 
 final tripRemoteDataSourceProvider =
 Provider<TripRemoteDataSource>((ref) {
@@ -50,6 +51,13 @@ Provider<GetBusTripsUseCase>((ref) {
 final getDriverTripsUseCaseProvider =
 Provider<GetDriverTripsUseCase>((ref) {
   return GetDriverTripsUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getFactoryTripsUseCaseProvider =
+Provider<GetFactoryTripsUseCase>((ref) {
+  return GetFactoryTripsUseCase(
     repository: ref.read(tripRepositoryProvider),
   );
 });
@@ -103,5 +111,14 @@ FutureProvider.family<List<TripEntity>, String>(
     return ref
         .read(getDriverTripsUseCaseProvider)
         .call(driverId);
+  },
+);
+
+final factoryTripsProvider =
+FutureProvider.family<List<TripEntity>, String>(
+      (ref, factoryId) {
+    return ref
+        .read(getFactoryTripsUseCaseProvider)
+        .call(factoryId);
   },
 );

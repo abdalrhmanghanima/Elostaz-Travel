@@ -4,6 +4,7 @@ import 'package:elostaz_travel/data/driver/data_source/driver_remote_data_source
 import 'package:elostaz_travel/domain/driver/use_case/add_driver_use_case.dart';
 import 'package:elostaz_travel/domain/driver/use_case/delete_driver_use_case.dart';
 import 'package:elostaz_travel/domain/driver/use_case/get_drivers_use_case.dart';
+import 'package:elostaz_travel/domain/driver/use_case/update_driver_use_case.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_notifier.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:elostaz_travel/data/driver/repository/driver_repository_impl.dart';
@@ -32,6 +33,13 @@ final getDriversUseCaseProvider = Provider<GetDriversUseCase>((ref) {
 final addDriverUseCaseProvider =
 Provider<AddDriverUseCase>((ref) {
   return AddDriverUseCase(
+    ref.read(driverRepositoryProvider),
+  );
+});
+
+final updateDriverUseCaseProvider =
+Provider<UpdateDriverUseCase>((ref) {
+  return UpdateDriverUseCase(
     ref.read(driverRepositoryProvider),
   );
 });

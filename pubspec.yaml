@@ -11,6 +11,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
   easy_localization: ^3.0.8
@@ -27,7 +31,6 @@ dependencies:
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
   path_provider: ^2.1.6
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/services/bus_local_image_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
+import 'package:elostaz_travel/core/utils/app_date_picker.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_button/custom_button.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
@@ -24,10 +25,12 @@ class EditBusBottomSheet extends ConsumerStatefulWidget {
   final BusEntity bus;
 
   final Future<bool> Function({
-  required String busName,
-  required DateTime licenseExpiryDate,
-  File? busImage,
-  File? licenseImage,
+    required String busName,
+    required DateTime licenseExpiryDate,
+    String? model,
+    int? manufacturingYear,
+    File? busImage,
+    File? licenseImage,
   }) onSave;
 
   @override
@@ -38,6 +41,8 @@ class EditBusBottomSheet extends ConsumerStatefulWidget {
 class _EditBusBottomSheetState
     extends ConsumerState<EditBusBottomSheet> {
   late final TextEditingController busNameController;
+  late final TextEditingController modelController;
+  late final TextEditingController manufacturingYearController;
 
   late DateTime selectedLicenseExpiryDate;
 
@@ -57,6 +62,19 @@ class _EditBusBottomSheetState
 
     busNameController = TextEditingController(
       text: widget.bus.busName,
+    );
+
+    modelController = TextEditingController(
+      text: widget.bus.model.isNotEmpty
+          ? widget.bus.model
+          : widget.bus.brand,
+    );
+
+    manufacturingYearController = TextEditingController(
+      text: widget.bus.manufacturingYear != null &&
+              widget.bus.manufacturingYear! > 0
+          ? widget.bus.manufacturingYear.toString()
+          : (widget.bus.modelYear > 0 ? widget.bus.modelYear.toString() : ''),
     );
 
     selectedLicenseExpiryDate =
@@ -87,6 +105,8 @@ class _EditBusBottomSheetState
   @override
   void dispose() {
     busNameController.dispose();
+    modelController.dispose();
+    manufacturingYearController.dispose();
     super.dispose();
   }
 
@@ -332,21 +352,12 @@ class _EditBusBottomSheetState
     )
         : today;
 
-    final selectedDate = await showDialog<DateTime>(
-      context: Navigator.of(
-        context,
-        rootNavigator: true,
-      ).context,
-      useRootNavigator: true,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return DatePickerDialog(
-          initialDate: selectedLicenseExpiryDate,
-          firstDate: firstDate,
-          lastDate: DateTime(2100),
-          initialCalendarMode: DatePickerMode.day,
-        );
-      },
+    final selectedDate = await AppDatePicker.show(
+      context,
+      initialDate: selectedLicenseExpiryDate,
+      firstDate: firstDate,
+      lastDate: DateTime(2100),
+      helpText: 'اختر تاريخ انتهاء الرخصة',
     );
 
     if (selectedDate == null) return;
@@ -368,6 +379,9 @@ class _EditBusBottomSheetState
 
   Future<void> _save() async {
     final busName = busNameController.text.trim();
+    final modelText = modelController.text.trim();
+    final mfgYearText = manufacturingYearController.text.trim();
+    final mfgYear = int.tryParse(mfgYearText);
 
     if (busName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -391,6 +405,8 @@ class _EditBusBottomSheetState
 
       debugPrint('Bus ID: ${widget.bus.id}');
       debugPrint('Bus Name: $busName');
+      debugPrint('Model: $modelText');
+      debugPrint('Manufacturing Year: $mfgYear');
       debugPrint(
         'License Expiry: $selectedLicenseExpiryDate',
       );
@@ -404,6 +420,8 @@ class _EditBusBottomSheetState
       final success = await widget.onSave(
         busName: busName,
         licenseExpiryDate: selectedLicenseExpiryDate,
+        model: modelText.isNotEmpty ? modelText : null,
+        manufacturingYear: mfgYear,
         busImage: selectedBusImage,
         licenseImage: selectedLicenseImage,
       );
@@ -529,6 +547,46 @@ class _EditBusBottomSheetState
               SizedBox(height: 16.h),
 
               // ==================================================
+              // MODEL
+              // ==================================================
+
+              CustomText(
+                title: 'الموديل',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+              ),
+
+              SizedBox(height: 7.h),
+
+              CustomTextFormField(
+                controller: modelController,
+                hint: 'مثال: Mercedes Tourismo',
+                textInputType: TextInputType.text,
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ==================================================
+              // MANUFACTURING YEAR
+              // ==================================================
+
+              CustomText(
+                title: 'سنة الصنع',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+              ),
+
+              SizedBox(height: 7.h),
+
+              CustomTextFormField(
+                controller: manufacturingYearController,
+                hint: 'مثال: 2020',
+                textInputType: TextInputType.number,
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ==================================================
               // LICENSE EXPIRY DATE
               // ==================================================
 
@@ -567,10 +625,7 @@ class _EditBusBottomSheetState
 
                       Expanded(
                         child: CustomText(
-                          title:
-                          '${selectedLicenseExpiryDate.day}/'
-                              '${selectedLicenseExpiryDate.month}/'
-                              '${selectedLicenseExpiryDate.year}',
+                          title: AppDateFormatter.format(selectedLicenseExpiryDate),
                           fontSize: 15.sp,
                           fontWeight:
                           FontWeight.w500,

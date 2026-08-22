@@ -37,7 +37,7 @@ class HomeTab extends ConsumerWidget {
         actions: [
           GestureDetector(
             onTap: () {
-              ref.read(bottomNavProvider.notifier).state = 3;
+              ref.read(bottomNavProvider.notifier).state = 4;
             },
             child: SizedBox(
               width: 44.w,
@@ -352,36 +352,53 @@ class _UpcomingLicensesCard extends ConsumerWidget {
     final today = DateTime(now.year, now.month, now.day);
 
     final allItems = [
-      ...expired.map((b) => _LicenseItem(bus: b, isExpired: true, daysLeft: 0)),
+      ...expired.map(
+            (b) => _LicenseItem(
+          bus: b,
+          isExpired: true,
+          daysLeft: 0,
+        ),
+      ),
       ...expiringSoon.map((b) {
         final expiry = DateTime(
           b.licenseExpiryDate.year,
           b.licenseExpiryDate.month,
           b.licenseExpiryDate.day,
         );
+
         final diff = expiry.difference(today).inDays;
-        return _LicenseItem(bus: b, isExpired: false, daysLeft: diff);
+
+        return _LicenseItem(
+          bus: b,
+          isExpired: false,
+          daysLeft: diff,
+        );
       }),
     ];
 
     return Container(
-      constraints: BoxConstraints(maxHeight: allItems.isEmpty ? 120.h : 360.h),
       width: Dimens.width,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Padding(
-        padding: EdgeInsets.only(left: 12.w, right: 12.w, top: 16.h),
+        padding: EdgeInsets.only(
+          left: 12.w,
+          right: 12.w,
+          top: 16.h,
+          bottom: 4.h,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
                   onTap: () {
-                    ref.read(bottomNavProvider.notifier).state = 3;
+                    ref.read(bottomNavProvider.notifier).state = 4;
                   },
                   child: CustomText(
                     title: "عرض الكل",
@@ -397,7 +414,10 @@ class _UpcomingLicensesCard extends ConsumerWidget {
                 ),
               ],
             ),
+
             SizedBox(height: 12.h),
+
+            // Empty state
             if (allItems.isEmpty)
               Padding(
                 padding: EdgeInsets.only(bottom: 16.h),
@@ -407,76 +427,81 @@ class _UpcomingLicensesCard extends ConsumerWidget {
                 ),
               )
             else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: allItems.length,
-                  itemBuilder: (context, index) {
-                    final item = allItems[index];
-                    final color = item.isExpired
-                        ? AppColors.red
-                        : AppColors.warning;
-                    final subtitle = item.isExpired
-                        ? 'انتهت الرخصة'
-                        : 'تنتهي خلال ${item.daysLeft} ${item.daysLeft == 1 ? 'يوم' : 'أيام'}';
+            // No ListView / No Scroll
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: allItems.map((item) {
+                  final color = item.isExpired
+                      ? AppColors.red
+                      : AppColors.warning;
 
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 12.h),
-                      width: Dimens.width,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 14.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
+                  final subtitle = item.isExpired
+                      ? 'انتهت الرخصة'
+                      : 'تنتهي خلال ${item.daysLeft} '
+                      '${item.daysLeft == 1 ? 'يوم' : 'أيام'}';
+
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 12.h),
+                    width: Dimens.width,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 14.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: color,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color,
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'رخصة السيارة • ${item.bus.busName}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
+                        ),
+
+                        SizedBox(width: 12.w),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'رخصة السيارة • ${item.bus.busName}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
                                 ),
-                                SizedBox(height: 4.h),
-                                Text(
-                                  subtitle,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: color,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                              ),
+
+                              SizedBox(height: 4.h),
+
+                              Text(
+                                subtitle,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: color,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
           ],
         ),

@@ -9,6 +9,8 @@ abstract class TripRepository {
 
   Future<List<TripEntity>> getDriverTrips(String driverId);
 
+  Future<List<TripEntity>> getFactoryTrips(String factoryId);
+
   Future<List<TripEntity>> getAllTrips();
 
   Future<List<TripEntity>> getMonthlyTrips({

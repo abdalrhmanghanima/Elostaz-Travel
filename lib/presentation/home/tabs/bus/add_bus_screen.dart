@@ -4,6 +4,7 @@ import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
 import 'package:elostaz_travel/core/services/license_notification_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
+import 'package:elostaz_travel/core/utils/app_date_picker.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
@@ -29,7 +30,8 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
   final busNameController = TextEditingController();
   final plateNumberController = TextEditingController();
   final brandController = TextEditingController();
-  final modelYearController = TextEditingController();
+  final modelController = TextEditingController();
+  final manufacturingYearController = TextEditingController();
 
   final chassisNumberController = TextEditingController();
   final engineNumberController = TextEditingController();
@@ -61,7 +63,8 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
     busNameController.dispose();
     plateNumberController.dispose();
     brandController.dispose();
-    modelYearController.dispose();
+    modelController.dispose();
+    manufacturingYearController.dispose();
 
     chassisNumberController.dispose();
     engineNumberController.dispose();
@@ -165,12 +168,30 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         CustomText(title: "الموديل"),
                         SizedBox(height: 4.h),
                         CustomTextFormField(
-                          controller: modelYearController,
-                          hint: "ادخل سنة الصنع",
+                          controller: modelController,
+                          hint: "مثال: Mercedes Tourismo",
+                          textInputType: TextInputType.text,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "الموديل مطلوب";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16.h),
+                        CustomText(title: "سنة الصنع"),
+                        SizedBox(height: 4.h),
+                        CustomTextFormField(
+                          controller: manufacturingYearController,
+                          hint: "مثال: 2020",
                           textInputType: TextInputType.number,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "سنة الصنع مطلوبة";
+                            }
+                            final parsed = int.tryParse(value.trim());
+                            if (parsed == null || parsed <= 1900 || parsed > 2100) {
+                              return "أدخل سنة صنع صحيحة";
                             }
                             return null;
                           },
@@ -246,7 +267,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: licenseExpiryDateController,
-                          hint: "dd/mm/yy",
+                          hint: "DD/MM/YYYY",
                           readOnly: true,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -255,18 +276,17 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                             return null;
                           },
                           onTap: () async {
-                            final DateTime? pickedDate = await showDatePicker(
-                              context: context,
+                            final DateTime? pickedDate = await AppDatePicker.show(
+                              context,
                               initialDate: DateTime.now(),
                               firstDate: DateTime.now(),
                               lastDate: DateTime(2100),
+                              helpText: 'اختر تاريخ انتهاء الرخصة',
                             );
 
                             if (pickedDate != null) {
                               licenseExpiryDateController.text =
-                              '${pickedDate.day.toString().padLeft(2, '0')}/'
-                                  '${pickedDate.month.toString().padLeft(2, '0')}/'
-                                  '${(pickedDate.year % 100).toString().padLeft(2, '0')}';
+                                  AppDateFormatter.format(pickedDate);
                             }
                           },
                         ),
@@ -536,10 +556,19 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                     final dateParts =
                     licenseExpiryDateController.text.split('/');
 
+                    int year = int.parse(dateParts[2]);
+                    if (year < 100) {
+                      year += 2000;
+                    }
+
                     final licenseExpiryDate = DateTime(
-                      2000 + int.parse(dateParts[2]),
+                      year,
                       int.parse(dateParts[1]),
                       int.parse(dateParts[0]),
+                    );
+
+                    final manufacturingYear = int.parse(
+                      manufacturingYearController.text.trim(),
                     );
 
                     final bus = BusEntity(
@@ -551,9 +580,11 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
 
                       brand: brandController.text.trim(),
 
-                      modelYear: int.parse(
-                        modelYearController.text.trim(),
-                      ),
+                      model: modelController.text.trim(),
+
+                      manufacturingYear: manufacturingYear,
+
+                      modelYear: manufacturingYear,
 
                       chassisNumber: chassisNumberController.text.trim(),
 

@@ -8,7 +8,6 @@ const String appStore ='https://apps.apple.com/app/';
 const String appId ='';
 
 const String appPackageName = '';
-var appLanguage  = [
-  AppLanguage('العربية', 'Arabic', 'ar', ''),
-  // AppLanguage('English', 'English', 'en', ''),
+var appLanguage = [
+  AppLanguage('العربية', 'Arabic', 'ar', 'EG'),
 ];

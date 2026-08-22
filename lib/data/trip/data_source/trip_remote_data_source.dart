@@ -9,6 +9,8 @@ abstract class TripRemoteDataSource {
 
   Future<List<TripModel>> getDriverTrips(String driverId);
 
+  Future<List<TripModel>> getFactoryTrips(String factoryId);
+
   /// Returns all trips belonging to the user.
   Future<List<TripModel>> getAllTrips();
 
