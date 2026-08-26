@@ -258,25 +258,28 @@ class DriverDetailsScreen extends ConsumerWidget {
 
                         SizedBox(height: 6.h),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CustomText(
-                              title: currentDriver.phone,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                              fontColor: const Color(0xFF666A73),
-                            ),
-                            SizedBox(width: 5.w),
-                            Icon(
-                              Icons.phone_outlined,
-                              size: 16.sp,
-                              color: const Color(0xFF666A73),
-                            ),
-                          ],
-                        ),
+                        if (currentDriver.phone.trim().isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CustomText(
+                                title: currentDriver.phone,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                                fontColor: const Color(0xFF666A73),
+                              ),
+                              SizedBox(width: 5.w),
+                              Icon(
+                                Icons.phone_outlined,
+                                size: 16.sp,
+                                color: const Color(0xFF666A73),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 6.h),
+                        ],
 
-                        SizedBox(height: 18.h),
+                        SizedBox(height: 12.h),
 
                         Row(
                           children: [

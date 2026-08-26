@@ -14,6 +14,7 @@ class BusEntity {
   final String? licenseImageUrl;
   final String? busImageUrl;
   final String specialConditions;
+  final String? prohibitedBankName;
   final String insuranceType;
 
   const BusEntity({
@@ -32,6 +33,47 @@ class BusEntity {
     this.licenseImageUrl,
     this.busImageUrl,
     required this.specialConditions,
+    this.prohibitedBankName,
     required this.insuranceType,
   });
+
+  BusEntity copyWith({
+    String? id,
+    String? busName,
+    String? plateNumber,
+    String? brand,
+    String? model,
+    int? manufacturingYear,
+    int? modelYear,
+    String? chassisNumber,
+    String? engineNumber,
+    int? passengerCount,
+    String? vehicleType,
+    DateTime? licenseExpiryDate,
+    String? licenseImageUrl,
+    String? busImageUrl,
+    String? specialConditions,
+    String? prohibitedBankName,
+    String? insuranceType,
+  }) {
+    return BusEntity(
+      id: id ?? this.id,
+      busName: busName ?? this.busName,
+      plateNumber: plateNumber ?? this.plateNumber,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      manufacturingYear: manufacturingYear ?? this.manufacturingYear,
+      modelYear: modelYear ?? this.modelYear,
+      chassisNumber: chassisNumber ?? this.chassisNumber,
+      engineNumber: engineNumber ?? this.engineNumber,
+      passengerCount: passengerCount ?? this.passengerCount,
+      vehicleType: vehicleType ?? this.vehicleType,
+      licenseExpiryDate: licenseExpiryDate ?? this.licenseExpiryDate,
+      licenseImageUrl: licenseImageUrl ?? this.licenseImageUrl,
+      busImageUrl: busImageUrl ?? this.busImageUrl,
+      specialConditions: specialConditions ?? this.specialConditions,
+      prohibitedBankName: prohibitedBankName ?? this.prohibitedBankName,
+      insuranceType: insuranceType ?? this.insuranceType,
+    );
+  }
 }

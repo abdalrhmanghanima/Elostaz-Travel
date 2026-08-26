@@ -41,6 +41,14 @@ class _AddFactoryTripBottomSheetState
   BusEntity? selectedBus;
   DriverEntity? selectedDriver;
   DateTime? selectedDate = DateTime.now();
+  TimeOfDay? departureTime;
+
+  String _formatTimeOfDay(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'ص' : 'م';
+    return '$hour:$minute $period';
+  }
 
   // Sahra (Night Shift) fields
   bool isNightShift = false;
@@ -178,6 +186,80 @@ class _AddFactoryTripBottomSheetState
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                         fontColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 14.h),
+
+                  // =================== DEPARTURE TIME (OPTIONAL) ===================
+                  CustomText(
+                    title: 'وقت خروج الرحلة من المصنع (اختياري)',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontColor: const Color(0xFF555555),
+                  ),
+
+                  SizedBox(height: 6.h),
+
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: departureTime ?? TimeOfDay.now(),
+                        helpText: 'اختر وقت خروج الرحلة من المصنع',
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          departureTime = picked;
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      height: 52.h,
+                      padding: EdgeInsets.symmetric(horizontal: 14.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBg,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 20.sp,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: CustomText(
+                              title: departureTime != null
+                                  ? _formatTimeOfDay(departureTime!)
+                                  : 'اختر وقت الخروج (اختياري)',
+                              fontSize: 14.sp,
+                              fontWeight: departureTime != null
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              fontColor: departureTime != null
+                                  ? AppColors.primary
+                                  : const Color(0xFF888888),
+                            ),
+                          ),
+                          if (departureTime != null)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  departureTime = null;
+                                });
+                              },
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 20.sp,
+                                color: Colors.grey,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -823,6 +905,9 @@ class _AddFactoryTripBottomSheetState
                                 : null,
                         factoryId: widget.factory.id,
                         factoryName: widget.factory.name,
+                        departureTime: departureTime != null
+                            ? _formatTimeOfDay(departureTime!)
+                            : null,
                         isNightShift: isNightShift,
                         sahraDetails: isNightShift &&
                                 sahraDetailsController.text.trim().isNotEmpty

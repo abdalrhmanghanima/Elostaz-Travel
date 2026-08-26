@@ -215,18 +215,21 @@ class _FactoryCard extends StatelessWidget {
 
                     SizedBox(height: 4.h),
 
-                    if (factory.phone.isNotEmpty) ...[
+                    if (factory.details.trim().isNotEmpty) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          CustomText(
-                            title: factory.phone,
-                            fontSize: 13.sp,
-                            fontColor: const Color(0xFF6B7280),
+                          Flexible(
+                            child: CustomText(
+                              title: factory.details,
+                              fontSize: 13.sp,
+                              fontColor: const Color(0xFF6B7280),
+                              maxLines: 1,
+                            ),
                           ),
                           SizedBox(width: 4.w),
                           Icon(
-                            Icons.phone_outlined,
+                            Icons.location_on_outlined,
                             size: 14.sp,
                             color: const Color(0xFF9CA3AF),
                           ),

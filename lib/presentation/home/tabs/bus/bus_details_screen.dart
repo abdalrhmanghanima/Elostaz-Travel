@@ -160,6 +160,8 @@ class BusDetailsScreen extends ConsumerWidget {
                           required DateTime licenseExpiryDate,
                           String? model,
                           int? manufacturingYear,
+                          String? specialConditions,
+                          String? prohibitedBankName,
                           File? busImage,
                           File? licenseImage,
                         }) async {
@@ -179,7 +181,18 @@ class BusDetailsScreen extends ConsumerWidget {
                               licenseExpiryDate: licenseExpiryDate,
                               licenseImageUrl: currentBus.licenseImageUrl,
                               busImageUrl: currentBus.busImageUrl,
-                              specialConditions: currentBus.specialConditions,
+                              specialConditions: specialConditions ?? currentBus.specialConditions,
+                              prohibitedBankName: ((specialConditions ??
+                                          currentBus.specialConditions) ==
+                                      'محظورة بيع' ||
+                                  (specialConditions ??
+                                          currentBus.specialConditions) ==
+                                      'محظورة البيع')
+                                  ? (prohibitedBankName != null &&
+                                          prohibitedBankName.trim().isNotEmpty
+                                      ? prohibitedBankName.trim()
+                                      : currentBus.prohibitedBankName)
+                                  : null,
                               insuranceType: currentBus.insuranceType,
                             );
 
@@ -673,6 +686,42 @@ class BusDetailsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
+
+                      if ((currentBus.specialConditions == 'محظورة بيع' ||
+                              currentBus.specialConditions == 'محظورة البيع') &&
+                          currentBus.prohibitedBankName != null &&
+                          currentBus.prohibitedBankName!.trim().isNotEmpty) ...[
+                        SizedBox(height: 16.h),
+                        Row(
+                          textDirection: TextDirection.rtl,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 1,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: CustomText(
+                                  title: "البنك المحظور لصالحه",
+                                  fontSize: 16.sp,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            Expanded(
+                              flex: 1,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: CustomText(
+                                  title: currentBus.prohibitedBankName!,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  maxLines: 3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -908,7 +957,7 @@ class BusDetailsScreen extends ConsumerWidget {
               padding: EdgeInsets.only(
                 left: 16.w,
                 right: 16.w,
-                bottom: 20.h,
+                bottom: 20.h + MediaQuery.paddingOf(context).bottom,
               ),
               child: CustomButton(
                 title: "حذف العربية",

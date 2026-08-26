@@ -325,31 +325,34 @@ class _DriversTabState extends ConsumerState<DriversTab> {
 
                                         SizedBox(height: 7.h),
 
-                                        // رقم الهاتف
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
-                                          children: [
-                                            Flexible(
-                                              child: CustomText(
-                                                title: driver.phone,
-                                                maxLines: 1,
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w700,
-                                                fontColor: const Color(0xFF666A73),
+                                        // رقم الهاتف (اختياري)
+                                        if (driver.phone.trim().isNotEmpty) ...[
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            children: [
+                                              Flexible(
+                                                child: CustomText(
+                                                  title: driver.phone,
+                                                  maxLines: 1,
+                                                  fontSize: 12.sp,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontColor: const Color(0xFF666A73),
+                                                ),
                                               ),
-                                            ),
 
-                                            SizedBox(width: 5.w),
+                                              SizedBox(width: 5.w),
 
-                                            Icon(
-                                              Icons.phone_outlined,
-                                              size: 16.sp,
-                                              color: const Color(0xFF777B85),
-                                            ),
-                                          ],
-                                        ),
+                                              Icon(
+                                                Icons.phone_outlined,
+                                                size: 16.sp,
+                                                color: const Color(0xFF777B85),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 6.h),
+                                        ],
 
-                                        SizedBox(height: 12.h),
+                                        SizedBox(height: 6.h),
 
                                         // عدد الرحلات
                                         Container(

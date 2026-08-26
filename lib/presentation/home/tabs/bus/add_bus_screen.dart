@@ -4,7 +4,6 @@ import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
 import 'package:elostaz_travel/core/services/license_notification_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
-import 'package:elostaz_travel/core/utils/app_date_picker.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
@@ -38,6 +37,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
   final passengerCountController = TextEditingController();
   final licenseExpiryDateController = TextEditingController();
   final carTypeController = TextEditingController();
+  final bankNameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   late final String busId;
 
@@ -71,15 +71,16 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
     passengerCountController.dispose();
     licenseExpiryDateController.dispose();
     carTypeController.dispose();
+    bankNameController.dispose();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final insuranceType = ref.watch(insuranceTypeProvider);
-    final specialRequirement = ref.watch(specialRequirementsProvider);
     final busState = ref.watch(busProvider);
+    final specialRequirement = ref.watch(specialRequirementsProvider);
+    final insuranceType = ref.watch(insuranceTypeProvider);
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: CustomAppBar(
@@ -99,7 +100,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
               left: 16.w,
               right: 16.w,
               top: 20.h,
-              bottom: 20.h,
+              bottom: 20.h + MediaQuery.paddingOf(context).bottom,
             ),
             child: Column(
               children: [
@@ -123,15 +124,14 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                       children: [
                         CustomText(title: "البيانات الأساسية", fontSize: 18.sp),
                         SizedBox(height: 16.h),
-                        CustomText(title: "اسم العربية"),
+                        CustomText(title: "اسم الأتوبيس"),
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: busNameController,
-                          hint: "ادخل اسم العربية",
-                          textInputType: TextInputType.text,
+                          hint: "أدخل اسم الأتوبيس",
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return "اسم العربية مطلوب";
+                              return "اسم الأتوبيس مطلوب";
                             }
                             return null;
                           },
@@ -141,11 +141,23 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: plateNumberController,
-                          hint: "أ ب ج 1 2 3",
-                          textInputType: TextInputType.text,
+                          hint: "أدخل رقم اللوحة",
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "رقم اللوحة مطلوب";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16.h),
+                        CustomText(title: "نوع العربية"),
+                        SizedBox(height: 4.h),
+                        CustomTextFormField(
+                          controller: carTypeController,
+                          hint: "مثال (ميكروباص - ميني باص - اتوبيس رحلات)",
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "نوع العربية مطلوب";
                             }
                             return null;
                           },
@@ -155,8 +167,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: brandController,
-                          hint: "شيفرولية",
-                          textInputType: TextInputType.text,
+                          hint: "مثال (تويوتا - مرسيدس - ميتسوبيشي)",
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "الماركة مطلوبة";
@@ -165,33 +176,28 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                           },
                         ),
                         SizedBox(height: 16.h),
-                        CustomText(title: "الموديل"),
+                        CustomText(title: "الموديل (اختياري)"),
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: modelController,
-                          hint: "مثال: Mercedes Tourismo",
-                          textInputType: TextInputType.text,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "الموديل مطلوب";
-                            }
-                            return null;
-                          },
+                          hint: "مثال: Coaster, HiAce, Sprinter",
                         ),
                         SizedBox(height: 16.h),
                         CustomText(title: "سنة الصنع"),
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: manufacturingYearController,
-                          hint: "مثال: 2020",
+                          hint: "أدخل سنة الصنع (مثال: 2024)",
                           textInputType: TextInputType.number,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "سنة الصنع مطلوبة";
                             }
-                            final parsed = int.tryParse(value.trim());
-                            if (parsed == null || parsed <= 1900 || parsed > 2100) {
-                              return "أدخل سنة صنع صحيحة";
+                            final year = int.tryParse(value.trim());
+                            if (year == null ||
+                                year < 1900 ||
+                                year > DateTime.now().year + 1) {
+                              return "من فضلك أدخل سنة صنع صحيحة";
                             }
                             return null;
                           },
@@ -226,7 +232,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         CustomTextFormField(
                           controller: chassisNumberController,
                           hint: "أدخل رقم الشاسية",
-                          textInputType: TextInputType.number,
+                          textInputType: TextInputType.text,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "رقم الشاسية مطلوب";
@@ -240,7 +246,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         CustomTextFormField(
                           controller: engineNumberController,
                           hint: "أدخل رقم الموتور",
-                          textInputType: TextInputType.number,
+                          textInputType: TextInputType.text,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "رقم الموتور مطلوب";
@@ -253,53 +259,11 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                         SizedBox(height: 4.h),
                         CustomTextFormField(
                           controller: passengerCountController,
-                          hint: "مثال: 50",
+                          hint: "أدخل عدد الركاب",
                           textInputType: TextInputType.number,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "عدد الركاب مطلوب";
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 16.h),
-                        CustomText(title: "تاريخ انتهاء الرخصة"),
-                        SizedBox(height: 4.h),
-                        CustomTextFormField(
-                          controller: licenseExpiryDateController,
-                          hint: "DD/MM/YYYY",
-                          readOnly: true,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "تاريخ انتهاء الرخصة مطلوب";
-                            }
-                            return null;
-                          },
-                          onTap: () async {
-                            final DateTime? pickedDate = await AppDatePicker.show(
-                              context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime(2100),
-                              helpText: 'اختر تاريخ انتهاء الرخصة',
-                            );
-
-                            if (pickedDate != null) {
-                              licenseExpiryDateController.text =
-                                  AppDateFormatter.format(pickedDate);
-                            }
-                          },
-                        ),
-                        SizedBox(height: 16.h),
-                        CustomText(title: "نوع السيارة"),
-                        SizedBox(height: 4.h),
-                        CustomTextFormField(
-                          controller: carTypeController,
-                          hint: "مثال: ميني باص",
-                          textInputType: TextInputType.text,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "نوع السيارة مطلوب";
                             }
                             return null;
                           },
@@ -327,11 +291,37 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        CustomText(
-                          title: "الشؤون القانونية والتأمين",
-                          fontSize: 16.sp,
+                        CustomText(title: "الترخيص والتأمين", fontSize: 18.sp),
+                        SizedBox(height: 16.h),
+                        CustomText(title: "تاريخ انتهاء الترخيص"),
+                        SizedBox(height: 4.h),
+                        CustomTextFormField(
+                          controller: licenseExpiryDateController,
+                          hint: "DD/MM/YYYY",
+                          textInputType: TextInputType.datetime,
+                          onTap: () async {
+                            final DateTime? pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2100),
+                            );
+
+                            if (pickedDate != null) {
+                              licenseExpiryDateController.text =
+                              "${pickedDate.day.toString().padLeft(2, '0')}/"
+                                  "${pickedDate.month.toString().padLeft(2, '0')}/"
+                                  "${pickedDate.year}";
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "تاريخ انتهاء الترخيص مطلوب";
+                            }
+                            return null;
+                          },
                         ),
-                        SizedBox(height: 10.h),
+                        SizedBox(height: 16.h),
                         CustomText(title: "اشتراطات خاصة"),
                         SizedBox(height: 8.h),
                         Container(
@@ -370,7 +360,7 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                                       'محظورة بيع',
                                       style: TextStyle(
                                         fontSize: 18,
-                                        color: specialRequirement == 'محظورة البيع'
+                                        color: specialRequirement == 'محظورة بيع'
                                             ? const Color(0xFF172B4D)
                                             : const Color(0xFF454545),
                                       ),
@@ -417,6 +407,24 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                             ],
                           ),
                         ),
+                        if (specialRequirement == 'محظورة بيع') ...[
+                          SizedBox(height: 16.h),
+                          CustomText(title: "اسم البنك المحظور البيع لصالحه *"),
+                          SizedBox(height: 4.h),
+                          CustomTextFormField(
+                            controller: bankNameController,
+                            hint: "أدخل اسم البنك المحظور البيع لصالحه",
+                            textInputType: TextInputType.text,
+                            validator: (value) {
+                              if (ref.read(specialRequirementsProvider) == 'محظورة بيع') {
+                                if (value == null || value.trim().isEmpty) {
+                                  return "اسم البنك مطلوب عند اختيار محظورة بيع";
+                                }
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
                         SizedBox(height: 16.h),
                         CustomText(title: "تأمين السيارة"),
                         SizedBox(height: 8.h),
@@ -603,7 +611,14 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                       busImageUrl: null,
 
                       specialConditions:
-                      ref.read(specialRequirementsProvider),
+                          ref.read(specialRequirementsProvider),
+
+                      prohibitedBankName: (ref.read(specialRequirementsProvider) ==
+                                  'محظورة بيع' ||
+                              ref.read(specialRequirementsProvider) ==
+                                  'محظورة البيع')
+                          ? bankNameController.text.trim()
+                          : null,
 
                       insuranceType: ref.read(insuranceTypeProvider),
                     );

@@ -16,6 +16,7 @@ class TripModel extends TripEntity {
     super.expenseDetails,
     super.factoryId,
     super.factoryName,
+    super.departureTime,
     super.isNightShift = false,
     super.expenseItems = const [],
     super.sahraDetails,
@@ -58,6 +59,7 @@ class TripModel extends TripEntity {
       expenseDetails: data['expenseDetails']?.toString(),
       factoryId: data['factoryId'] as String?,
       factoryName: data['factoryName'] as String?,
+      departureTime: data['departureTime']?.toString(),
       isNightShift: data['isNightShift'] == true,
       expenseItems: items,
       sahraDetails: data['sahraDetails']?.toString(),
@@ -89,6 +91,7 @@ class TripModel extends TripEntity {
       expenseDetails: entity.expenseDetails,
       factoryId: entity.factoryId,
       factoryName: entity.factoryName,
+      departureTime: entity.departureTime,
       isNightShift: entity.isNightShift,
       expenseItems: entity.expenseItems,
       sahraDetails: entity.sahraDetails,
@@ -115,6 +118,8 @@ class TripModel extends TripEntity {
       if (factoryId != null && factoryId!.isNotEmpty) 'factoryId': factoryId,
       if (factoryName != null && factoryName!.isNotEmpty)
         'factoryName': factoryName,
+      if (departureTime != null && departureTime!.trim().isNotEmpty)
+        'departureTime': departureTime!.trim(),
       'isNightShift': isNightShift,
       if (expenseItems.isNotEmpty)
         'expenseItems': expenseItems.map((e) => e.toMap()).toList(),

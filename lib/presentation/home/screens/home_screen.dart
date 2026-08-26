@@ -60,7 +60,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: screens,
       ),
       bottomNavigationBar: Container(
-        height: 85.h,
         decoration: BoxDecoration(
           color: AppColors.white,
           boxShadow: [
@@ -72,77 +71,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          elevation: 0,
-          backgroundColor: AppColors.white,
-          type: BottomNavigationBarType.fixed,
-          currentIndex: currentScreen,
-          onTap: (index) {
-            ref.read(bottomNavProvider.notifier).state = index;
-          },
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: Colors.black,
-          selectedFontSize: 13.sp,
-          unselectedFontSize: 12.sp,
-          items: [
-            BottomNavigationBarItem(
-              icon: Transform.translate(
-                offset: Offset(0, -1.h),
-                child: _AnimatedNavBarIcon(
-                  assetName: AppIcons.home,
-                  filledAssetName: AppIcons.homeFilled,
-                  isSelected: currentScreen == 0,
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 65.h,
+            child: BottomNavigationBar(
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              type: BottomNavigationBarType.fixed,
+              currentIndex: currentScreen,
+              onTap: (index) {
+                ref.read(bottomNavProvider.notifier).state = index;
+              },
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: Colors.black,
+              selectedFontSize: 13.sp,
+              unselectedFontSize: 12.sp,
+              items: [
+                BottomNavigationBarItem(
+                  icon: Transform.translate(
+                    offset: Offset(0, -1.h),
+                    child: _AnimatedNavBarIcon(
+                      assetName: AppIcons.home,
+                      filledAssetName: AppIcons.homeFilled,
+                      isSelected: currentScreen == 0,
+                    ),
+                  ),
+                  label: 'الرئيسية',
                 ),
-              ),
-              label: 'الرئيسية',
-            ),
-            BottomNavigationBarItem(
-              icon: Transform.translate(
-                offset: Offset(0, -1.h),
-                child: _AnimatedNavBarIcon(
-                  assetName: AppIcons.bus,
-                  filledAssetName: AppIcons.busFilled,
-                  isSelected: currentScreen == 1,
+                BottomNavigationBarItem(
+                  icon: Transform.translate(
+                    offset: Offset(0, -1.h),
+                    child: _AnimatedNavBarIcon(
+                      assetName: AppIcons.bus,
+                      filledAssetName: AppIcons.busFilled,
+                      isSelected: currentScreen == 1,
+                    ),
+                  ),
+                  label: 'الأتوبيسات',
                 ),
-              ),
-              label: 'الأتوبيسات',
-            ),
-            BottomNavigationBarItem(
-              icon: Transform.translate(
-                offset: Offset(0, -1.h),
-                child: _AnimatedNavBarIcon(
-                  assetName: AppIcons.person,
-                  filledAssetName: AppIcons.personFilled,
-                  isSelected: currentScreen == 2,
+                BottomNavigationBarItem(
+                  icon: Transform.translate(
+                    offset: Offset(0, -1.h),
+                    child: _AnimatedNavBarIcon(
+                      assetName: AppIcons.person,
+                      filledAssetName: AppIcons.personFilled,
+                      isSelected: currentScreen == 2,
+                    ),
+                  ),
+                  label: 'السواقين',
                 ),
-              ),
-              label: 'السواقين',
-            ),
-            BottomNavigationBarItem(
-              icon: Transform.translate(
-                offset: Offset(0, -1.h),
-                child: _AnimatedNavBarIcon(
-                  assetName: AppIcons.factory,
-                  filledAssetName: AppIcons.factoryFilled,
-                  isSelected: currentScreen == 3,
+                BottomNavigationBarItem(
+                  icon: Transform.translate(
+                    offset: Offset(0, -1.h),
+                    child: _AnimatedNavBarIcon(
+                      assetName: AppIcons.factory,
+                      filledAssetName: AppIcons.factoryFilled,
+                      isSelected: currentScreen == 3,
+                    ),
+                  ),
+                  label: 'المصانع',
                 ),
-              ),
-              label: 'المصانع',
-            ),
-            BottomNavigationBarItem(
-              icon: Transform.translate(
-                offset: Offset(0, -1.h),
-                child: _AnimatedNavBarIcon(
-                  assetName: AppIcons.notification,
-                  filledAssetName: AppIcons.notificationFilled,
-                  isSelected: currentScreen == 4,
+                BottomNavigationBarItem(
+                  icon: Transform.translate(
+                    offset: Offset(0, -1.h),
+                    child: _AnimatedNavBarIcon(
+                      assetName: AppIcons.notification,
+                      filledAssetName: AppIcons.notificationFilled,
+                      isSelected: currentScreen == 4,
+                    ),
+                  ),
+                  label: 'التنبيهات',
                 ),
-              ),
-              label: 'التنبيهات',
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

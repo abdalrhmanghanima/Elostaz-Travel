@@ -44,26 +44,7 @@ class BusRemoteDataSourceImpl implements BusRemoteDataSource {
 
     await _busesCollection
         .doc(bus.id)
-        .set(
-      BusModel(
-        id: bus.id,
-        busName: bus.busName,
-        plateNumber: bus.plateNumber,
-        brand: bus.brand,
-        model: bus.model,
-        manufacturingYear: bus.manufacturingYear,
-        modelYear: bus.manufacturingYear ?? bus.modelYear,
-        chassisNumber: bus.chassisNumber,
-        engineNumber: bus.engineNumber,
-        passengerCount: bus.passengerCount,
-        vehicleType: bus.vehicleType,
-        licenseExpiryDate: bus.licenseExpiryDate,
-        licenseImageUrl: bus.licenseImageUrl,
-        busImageUrl: bus.busImageUrl,
-        specialConditions: bus.specialConditions,
-        insuranceType: bus.insuranceType,
-      ).toFirestore(),
-    );
+        .set(BusModel.fromEntity(bus).toFirestore());
   }
 
   @override
@@ -72,14 +53,24 @@ class BusRemoteDataSourceImpl implements BusRemoteDataSource {
   }) async {
     final docRef = _busesCollection.doc(bus.id);
 
+    final isProhibited = bus.specialConditions == 'محظورة بيع' ||
+        bus.specialConditions == 'محظورة البيع';
+    final hasBankName = bus.prohibitedBankName != null &&
+        bus.prohibitedBankName!.trim().isNotEmpty;
+
     final updateData = <String, dynamic>{
       'busName': bus.busName,
       'model': bus.model,
-      if (bus.manufacturingYear != null) 'manufacturingYear': bus.manufacturingYear,
+      if (bus.manufacturingYear != null)
+        'manufacturingYear': bus.manufacturingYear,
       'modelYear': bus.manufacturingYear ?? bus.modelYear,
       'licenseExpiryDate': Timestamp.fromDate(bus.licenseExpiryDate),
       'licenseImageUrl': bus.licenseImageUrl,
       'busImageUrl': bus.busImageUrl,
+      'specialConditions': bus.specialConditions,
+      'prohibitedBankName': (isProhibited && hasBankName)
+          ? bus.prohibitedBankName!.trim()
+          : FieldValue.delete(),
     };
 
     await docRef.update(updateData);

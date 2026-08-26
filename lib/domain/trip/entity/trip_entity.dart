@@ -35,11 +35,12 @@ class TripEntity {
   final double revenue;
   final DateTime createdAt;
   final double expenses;
-  final String? expenseDetails;
   final String? factoryId;
   final String? factoryName;
+  final String? departureTime;
   final bool isNightShift;
   final List<TripExpenseItem> expenseItems;
+  final String? expenseDetails;
 
   // Dedicated optional Night Shift ("سهرة") fields
   final String? sahraDetails;
@@ -63,6 +64,7 @@ class TripEntity {
     this.expenseDetails,
     this.factoryId,
     this.factoryName,
+    this.departureTime,
     this.isNightShift = false,
     this.expenseItems = const [],
     this.sahraDetails,

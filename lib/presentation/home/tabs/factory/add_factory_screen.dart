@@ -27,7 +27,6 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
-  late final TextEditingController _phoneController;
   late final TextEditingController _detailsController;
 
   bool get _isEditing => widget.factory != null;
@@ -36,7 +35,6 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.factory?.name ?? '');
-    _phoneController = TextEditingController(text: widget.factory?.phone ?? '');
     _detailsController =
         TextEditingController(text: widget.factory?.details ?? '');
   }
@@ -44,7 +42,6 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
     _detailsController.dispose();
     super.dispose();
   }
@@ -68,9 +65,11 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
         },
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: 20.w,
-          vertical: 24.h,
+        padding: EdgeInsets.only(
+          left: 20.w,
+          right: 20.w,
+          top: 24.h,
+          bottom: 24.h + MediaQuery.paddingOf(context).bottom,
         ),
         child: Form(
           key: _formKey,
@@ -127,32 +126,9 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
 
               SizedBox(height: 18.h),
 
-              // Factory Phone
+              // Factory Address / Notes
               CustomText(
-                title: 'رقم الهاتف / التواصل (اختياري)',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                fontColor: const Color(0xFF444444),
-              ),
-
-              SizedBox(height: 8.h),
-
-              CustomTextFormField(
-                controller: _phoneController,
-                hint: 'أدخل رقم هاتف المصنع أو مسؤول الحركة',
-                textInputType: TextInputType.phone,
-                prefix: Icon(
-                  Icons.phone_outlined,
-                  size: 22.sp,
-                  color: const Color(0xFF777B85),
-                ),
-              ),
-
-              SizedBox(height: 18.h),
-
-              // Factory Details / Notes
-              CustomText(
-                title: 'تفاصيل / مواعيد الوردية / ملاحظات (اختياري)',
+                title: 'عنوان المصنع / ملاحظات (اختياري)',
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 fontColor: const Color(0xFF444444),
@@ -162,7 +138,7 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
 
               CustomTextFormField(
                 controller: _detailsController,
-                hint: 'مثال: مواعيد الشفتات، العنوان، أسماء المشرفين...',
+                hint: 'مثال: العنوان، مواعيد الشفتات، أسماء المشرفين...',
                 prefix: Icon(
                   Icons.notes_rounded,
                   size: 22.sp,
@@ -194,7 +170,7 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
                     final updated = FactoryEntity(
                       id: widget.factory!.id,
                       name: _nameController.text.trim(),
-                      phone: _phoneController.text.trim(),
+                      phone: widget.factory!.phone,
                       details: _detailsController.text.trim(),
                       tripsCount: widget.factory!.tripsCount,
                       totalRevenue: widget.factory!.totalRevenue,
@@ -208,7 +184,7 @@ class _AddFactoryScreenState extends ConsumerState<AddFactoryScreen> {
                         .read(factoriesProvider.notifier)
                         .addFactory(
                           name: _nameController.text.trim(),
-                          phone: _phoneController.text.trim(),
+                          phone: '',
                           details: _detailsController.text.trim(),
                           totalRevenue: 0,
                           tripsCount: 0,

@@ -18,8 +18,31 @@ class BusModel extends BusEntity {
     super.licenseImageUrl,
     super.busImageUrl,
     required super.specialConditions,
+    super.prohibitedBankName,
     required super.insuranceType,
   });
+
+  factory BusModel.fromEntity(BusEntity entity) {
+    return BusModel(
+      id: entity.id,
+      busName: entity.busName,
+      plateNumber: entity.plateNumber,
+      brand: entity.brand,
+      model: entity.model,
+      manufacturingYear: entity.manufacturingYear,
+      modelYear: entity.manufacturingYear ?? entity.modelYear,
+      chassisNumber: entity.chassisNumber,
+      engineNumber: entity.engineNumber,
+      passengerCount: entity.passengerCount,
+      vehicleType: entity.vehicleType,
+      licenseExpiryDate: entity.licenseExpiryDate,
+      licenseImageUrl: entity.licenseImageUrl,
+      busImageUrl: entity.busImageUrl,
+      specialConditions: entity.specialConditions,
+      prohibitedBankName: entity.prohibitedBankName,
+      insuranceType: entity.insuranceType,
+    );
+  }
 
   factory BusModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> document,
@@ -57,6 +80,7 @@ class BusModel extends BusEntity {
       licenseImageUrl: data['licenseImageUrl'],
       busImageUrl: data['busImageUrl'],
       specialConditions: data['specialConditions'] ?? '',
+      prohibitedBankName: data['prohibitedBankName']?.toString(),
       insuranceType: data['insuranceType'] ?? 'غير مؤمنة',
     );
   }
@@ -77,6 +101,8 @@ class BusModel extends BusEntity {
       'licenseImageUrl': licenseImageUrl,
       'busImageUrl': busImageUrl,
       'specialConditions': specialConditions,
+      if (prohibitedBankName != null && prohibitedBankName!.trim().isNotEmpty)
+        'prohibitedBankName': prohibitedBankName!.trim(),
       'insuranceType': insuranceType,
     };
   }

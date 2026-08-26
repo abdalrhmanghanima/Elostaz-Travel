@@ -26,6 +26,8 @@ class TripCard extends ConsumerWidget {
     final netRevenue = trip.revenue - trip.expenses;
     final bool hasFactory =
         trip.factoryName != null && trip.factoryName!.trim().isNotEmpty;
+    final bool hasDepartureTime =
+        trip.departureTime != null && trip.departureTime!.trim().isNotEmpty;
     final bool hasSahraSection = trip.hasSahra;
 
     return InkWell(
@@ -206,14 +208,14 @@ class TripCard extends ConsumerWidget {
               ),
             ],
 
-            // Factory badge / row if present
-            if (hasFactory) ...[
+            // Factory / Departure Time badge if present
+            if (hasFactory || hasDepartureTime) ...[
               SizedBox(height: 10.h),
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(
                   horizontal: 12.w,
-                  vertical: 6.h,
+                  vertical: 7.h,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0F4FF),
@@ -224,26 +226,62 @@ class TripCard extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.factory_outlined,
-                      size: 16.sp,
-                      color: AppColors.primary,
-                    ),
-                    SizedBox(width: 6.w),
-                    CustomText(
-                      title: 'المصنع: ',
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      fontColor: AppColors.primary,
-                    ),
-                    Expanded(
-                      child: CustomText(
-                        title: trip.factoryName!,
+                    if (hasFactory) ...[
+                      Icon(
+                        Icons.factory_outlined,
+                        size: 16.sp,
+                        color: AppColors.primary,
+                      ),
+                      SizedBox(width: 6.w),
+                      CustomText(
+                        title: 'المصنع: ',
                         fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         fontColor: AppColors.primary,
                       ),
-                    ),
+                      Expanded(
+                        child: CustomText(
+                          title: trip.factoryName!,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w700,
+                          fontColor: AppColors.primary,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                    if (hasDepartureTime) ...[
+                      if (hasFactory) SizedBox(width: 8.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(6.r),
+                          border: Border.all(
+                            color: const Color(0xFFD0DCFF),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 13.sp,
+                              color: AppColors.primary,
+                            ),
+                            SizedBox(width: 4.w),
+                            CustomText(
+                              title: trip.departureTime!,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              fontColor: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

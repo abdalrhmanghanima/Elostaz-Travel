@@ -146,21 +146,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.all(20.r),
-        child: CustomButton(
-          title: "تسجيل الدخول",
-          bg: AppColors.primary,
-          isLoading: loginState.isLoading,
-          onTap: () async {
-            if (!formKey.currentState!.validate()) return;
-            await ref
-                .read(loginProvider.notifier)
-                .login(
-                  email: emailController.text,
-                  password: passwordController.text,
-                );
-          },
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.all(20.r),
+          child: CustomButton(
+            title: "تسجيل الدخول",
+            bg: AppColors.primary,
+            isLoading: loginState.isLoading,
+            onTap: () async {
+              if (!formKey.currentState!.validate()) return;
+              await ref
+                  .read(loginProvider.notifier)
+                  .login(
+                    email: emailController.text,
+                    password: passwordController.text,
+                  );
+            },
+          ),
         ),
       ),
     );

@@ -86,16 +86,17 @@ class _BusTabState extends ConsumerState<BusTab> {
             data: (buses) {
               final filteredBuses = buses.where((bus) {
                 final name = bus.busName.trim().toLowerCase();
+                final plate = bus.plateNumber.trim().toLowerCase();
                 final query = searchQuery.trim().toLowerCase();
 
-                return name.contains(query);
+                return name.contains(query) || plate.contains(query);
               }).toList();
 
               return Column(
                 children: [
                   CustomTextFormField(
                     controller: searchController,
-                    hint: 'ابحث باسم الأتوبيس',
+                    hint: 'ابحث باسم أو رقم الأتوبيس',
                     prefix: Icon(
                       Icons.search_rounded,
                       size: 23.sp,

@@ -95,7 +95,9 @@ class _AddDriverAdvanceBottomSheetState
         20.w,
         12.h,
         20.w,
-        MediaQuery.of(context).viewInsets.bottom + 20.h,
+        MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            20.h,
       ),
       child: Form(
         key: _formKey,

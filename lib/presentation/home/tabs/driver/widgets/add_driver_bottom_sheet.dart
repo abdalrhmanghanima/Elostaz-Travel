@@ -136,7 +136,9 @@ class _AddDriverBottomSheetState extends State<AddDriverBottomSheet> {
         20.w,
         12.h,
         20.w,
-        MediaQuery.of(context).viewInsets.bottom + 20.h,
+        MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            20.h,
       ),
       child: Form(
         key: formKey,
@@ -184,19 +186,13 @@ class _AddDriverBottomSheetState extends State<AddDriverBottomSheet> {
               SizedBox(height: 12.h),
               CustomTextFormField(
                 controller: phoneController,
-                hint: 'رقم التليفون *',
+                hint: 'رقم التليفون (اختياري)',
                 textInputType: TextInputType.phone,
                 prefix: Icon(
                   Icons.phone_outlined,
                   size: 22.sp,
                   color: const Color(0xFF777B85),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'من فضلك أدخل رقم التليفون';
-                  }
-                  return null;
-                },
               ),
 
               SizedBox(height: 12.h),

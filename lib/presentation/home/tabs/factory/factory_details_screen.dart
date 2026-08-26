@@ -255,45 +255,27 @@ class FactoryDetailsScreen extends ConsumerWidget {
                           fontColor: AppColors.primary,
                         ),
 
-                        if (currentFactory.phone.isNotEmpty) ...[
+                        if (currentFactory.details.isNotEmpty) ...[
                           SizedBox(height: 6.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CustomText(
-                                title: currentFactory.phone,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                fontColor: const Color(0xFF666A73),
-                              ),
-                              SizedBox(width: 5.w),
                               Icon(
-                                Icons.phone_outlined,
+                                Icons.location_on_outlined,
                                 size: 16.sp,
                                 color: const Color(0xFF666A73),
                               ),
+                              SizedBox(width: 5.w),
+                              Flexible(
+                                child: CustomText(
+                                  title: currentFactory.details,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  fontColor: const Color(0xFF666A73),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             ],
-                          ),
-                        ],
-
-                        if (currentFactory.details.isNotEmpty) ...[
-                          SizedBox(height: 10.h),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 6.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF9FAFB),
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: CustomText(
-                              title: currentFactory.details,
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w500,
-                              fontColor: const Color(0xFF4B5563),
-                              textAlign: TextAlign.center,
-                            ),
                           ),
                         ],
 

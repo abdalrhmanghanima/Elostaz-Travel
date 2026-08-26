@@ -29,6 +29,8 @@ class EditBusBottomSheet extends ConsumerStatefulWidget {
     required DateTime licenseExpiryDate,
     String? model,
     int? manufacturingYear,
+    String? specialConditions,
+    String? prohibitedBankName,
     File? busImage,
     File? licenseImage,
   }) onSave;
@@ -43,8 +45,10 @@ class _EditBusBottomSheetState
   late final TextEditingController busNameController;
   late final TextEditingController modelController;
   late final TextEditingController manufacturingYearController;
+  late final TextEditingController bankNameController;
 
   late DateTime selectedLicenseExpiryDate;
+  late String specialConditions;
 
   File? selectedBusImage;
   File? selectedLicenseImage;
@@ -77,10 +81,27 @@ class _EditBusBottomSheetState
           : (widget.bus.modelYear > 0 ? widget.bus.modelYear.toString() : ''),
     );
 
+    bankNameController = TextEditingController(
+      text: widget.bus.prohibitedBankName ?? '',
+    );
+
+    specialConditions = widget.bus.specialConditions.isNotEmpty
+        ? widget.bus.specialConditions
+        : 'السيارة خالصة';
+
     selectedLicenseExpiryDate =
         widget.bus.licenseExpiryDate;
 
     _loadExistingLocalImages();
+  }
+
+  @override
+  void dispose() {
+    busNameController.dispose();
+    modelController.dispose();
+    manufacturingYearController.dispose();
+    bankNameController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadExistingLocalImages() async {
@@ -102,13 +123,6 @@ class _EditBusBottomSheetState
     });
   }
 
-  @override
-  void dispose() {
-    busNameController.dispose();
-    modelController.dispose();
-    manufacturingYearController.dispose();
-    super.dispose();
-  }
 
   // ============================================================
   // IMAGE SOURCE PICKER (CAMERA / GALLERY)
@@ -392,6 +406,16 @@ class _EditBusBottomSheetState
       return;
     }
 
+    if (specialConditions == 'محظورة بيع' &&
+        bankNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('من فضلك أدخل اسم البنك المحظور البيع لصالحه'),
+        ),
+      );
+      return;
+    }
+
     if (isLoading) return;
 
     setState(() {
@@ -410,6 +434,8 @@ class _EditBusBottomSheetState
       debugPrint(
         'License Expiry: $selectedLicenseExpiryDate',
       );
+      debugPrint('Special Conditions: $specialConditions');
+      debugPrint('Prohibited Bank: ${bankNameController.text.trim()}');
       debugPrint(
         'New Bus Image: ${selectedBusImage?.path}',
       );
@@ -422,6 +448,10 @@ class _EditBusBottomSheetState
         licenseExpiryDate: selectedLicenseExpiryDate,
         model: modelText.isNotEmpty ? modelText : null,
         manufacturingYear: mfgYear,
+        specialConditions: specialConditions,
+        prohibitedBankName: specialConditions == 'محظورة بيع'
+            ? bankNameController.text.trim()
+            : null,
         busImage: selectedBusImage,
         licenseImage: selectedLicenseImage,
       );
@@ -642,6 +672,121 @@ class _EditBusBottomSheetState
                   ),
                 ),
               ),
+
+              SizedBox(height: 16.h),
+
+              // ==================================================
+              // SPECIAL CONDITIONS & PROHIBITED BANK
+              // ==================================================
+              CustomText(
+                title: 'اشتراطات خاصة',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+              ),
+
+              SizedBox(height: 8.h),
+
+              Container(
+                height: 54.h,
+                padding: EdgeInsets.all(6.r),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0EEF1),
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            specialConditions = 'محظورة بيع';
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: specialConditions == 'محظورة بيع'
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10.r),
+                            boxShadow: specialConditions == 'محظورة بيع'
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 5,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'محظورة بيع',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: specialConditions == 'محظورة بيع'
+                                  ? const Color(0xFF172B4D)
+                                  : const Color(0xFF454545),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            specialConditions = 'السيارة خالصة';
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: specialConditions == 'السيارة خالصة'
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10.r),
+                            boxShadow: specialConditions == 'السيارة خالصة'
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 5,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'السيارة خالصة',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: specialConditions == 'السيارة خالصة'
+                                  ? const Color(0xFF172B4D)
+                                  : const Color(0xFF454545),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              if (specialConditions == 'محظورة بيع') ...[
+                SizedBox(height: 14.h),
+                CustomText(
+                  title: 'اسم البنك المحظور البيع لصالحه *',
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+                SizedBox(height: 7.h),
+                CustomTextFormField(
+                  controller: bankNameController,
+                  hint: 'أدخل اسم البنك المحظور البيع لصالحه',
+                  textInputType: TextInputType.text,
+                ),
+              ],
 
               SizedBox(height: 20.h),
 
