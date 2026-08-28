@@ -25,7 +25,9 @@ class DocumentImageNotifier extends StateNotifier<XFile?> {
   Future<void> pickImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(
       source: source,
-      imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
     );
 
     if (image == null) return;

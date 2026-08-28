@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elostaz_travel/core/dimens/dimens.dart';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
+import 'package:elostaz_travel/core/services/bus_local_image_service.dart';
 import 'package:elostaz_travel/core/services/license_notification_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
@@ -12,6 +14,7 @@ import 'package:elostaz_travel/presentation/components/custom_text/custom_text.d
 import 'package:elostaz_travel/presentation/components/inputs/custom_text_form.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_insurance_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/provider/document_upload_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/special_requirements_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/document_upload_container.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -629,6 +632,30 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
 
                     final state = ref.read(busProvider);
                     if (!state.hasError) {
+                      final busPhotoXFile = ref.read(
+                        documentImageProvider(
+                          (busId: busId, documentType: 'bus_photo'),
+                        ),
+                      );
+                      final licenseXFile = ref.read(
+                        documentImageProvider(
+                          (busId: busId, documentType: 'bus_license'),
+                        ),
+                      );
+
+                      if (busPhotoXFile != null) {
+                        await BusLocalImageService.instance.saveBusImage(
+                          busId,
+                          File(busPhotoXFile.path),
+                        );
+                      }
+                      if (licenseXFile != null) {
+                        await BusLocalImageService.instance.saveLicenseImage(
+                          busId,
+                          File(licenseXFile.path),
+                        );
+                      }
+
                       await LicenseNotificationService.instance
                           .scheduleBusLicenseNotifications(bus);
                     }
@@ -637,7 +664,8 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                       NavigatorHandler.pop();
                     }
                   },
-                  bg: AppColors.primary,)
+                  bg: AppColors.primary,
+                )
               ],
             ),
           ),

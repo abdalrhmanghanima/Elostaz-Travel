@@ -32,7 +32,6 @@ class AddTripBottomSheet extends ConsumerStatefulWidget {
 class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
   final formKey = GlobalKey<FormState>();
 
-  // Normal trip controllers
   final detailsController = TextEditingController();
   final revenueController = TextEditingController();
   final expensesController = TextEditingController();
@@ -50,15 +49,8 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
     return '$hour:$minute $period';
   }
 
-  // Sahra (Night Shift) fields
-  bool isNightShift = false;
-  final sahraDetailsController = TextEditingController();
-  final sahraRevenueController = TextEditingController();
-  final sahraExpensesController = TextEditingController();
-  final sahraExpenseDetailsController = TextEditingController();
-  DriverEntity? sahraDriver;
-
   double? parseArabicNumber(String value) {
+    if (value.trim().isEmpty) return null;
     final normalized = value
         .replaceAll('٠', '0')
         .replaceAll('١', '1')
@@ -82,10 +74,6 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
     revenueController.dispose();
     expensesController.dispose();
     expenseDetailsController.dispose();
-    sahraDetailsController.dispose();
-    sahraRevenueController.dispose();
-    sahraExpensesController.dispose();
-    sahraExpenseDetailsController.dispose();
     super.dispose();
   }
 
@@ -166,150 +154,46 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                     ],
                   ),
 
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 10.h),
 
-                  // =================== FACTORY SELECTION ===================
-                  CustomText(
-                    title: 'اختر المصنع (اختياري)',
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    fontColor: const Color(0xFF555555),
-                  ),
-
-                  SizedBox(height: 6.h),
-
+                  // Bus Info Badge (Automatically selected)
                   Container(
-                    height: 64.h,
-                    padding: EdgeInsets.symmetric(horizontal: 14.w),
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: const Color(0xFFF0F4FF),
                       borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: const Color(0xFFDCDCDC)),
+                      border: Border.all(color: const Color(0xFFD0DCFF)),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<FactoryEntity?>(
-                        isExpanded: true,
-                        hint: Row(
-                          children: [
-                            Icon(
-                              Icons.factory_outlined,
-                              color: AppColors.primary,
-                              size: 20.sp,
-                            ),
-                            SizedBox(width: 8.w),
-                            CustomText(
-                              title: 'بدون مصنع (رحلة عامة)',
-                              fontSize: 14.sp,
-                              fontColor: const Color(0xFF888888),
-                            ),
-                          ],
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.directions_bus_rounded,
+                          color: AppColors.primary,
+                          size: 20.sp,
                         ),
-                        value: selectedFactory,
-                        items: [
-                          DropdownMenuItem<FactoryEntity?>(
-                            value: null,
-                            child: CustomText(
-                              title: 'بدون مصنع (رحلة عامة)',
-                              fontSize: 14.sp,
-                              fontColor: const Color(0xFF888888),
-                            ),
+                        SizedBox(width: 8.w),
+                        CustomText(
+                          title: 'الأتوبيس: ',
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          fontColor: AppColors.primary,
+                        ),
+                        Expanded(
+                          child: CustomText(
+                            title: '${widget.bus.busName} (${widget.bus.plateNumber})',
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            fontColor: AppColors.primary,
                           ),
-                          ...factories.map((factory) {
-                            return DropdownMenuItem<FactoryEntity?>(
-                              value: factory,
-                              child: CustomText(
-                                title: factory.name,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            );
-                          }),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            selectedFactory = val;
-                          });
-                        },
-                      ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  // =================== DEPARTURE TIME (OPTIONAL) ===================
-                  if (selectedFactory != null) ...[
-                    SizedBox(height: 14.h),
-                    CustomText(
-                      title: 'وقت خروج الرحلة من المصنع (اختياري)',
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      fontColor: const Color(0xFF555555),
-                    ),
-                    SizedBox(height: 6.h),
-                    InkWell(
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: departureTime ?? TimeOfDay.now(),
-                          helpText: 'اختر وقت خروج الرحلة من المصنع',
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            departureTime = picked;
-                          });
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: Container(
-                        height: 52.h,
-                        padding: EdgeInsets.symmetric(horizontal: 14.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.inputBg,
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.access_time_rounded,
-                              size: 20.sp,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 8.w),
-                            Expanded(
-                              child: CustomText(
-                                title: departureTime != null
-                                    ? _formatTimeOfDay(departureTime!)
-                                    : 'اختر وقت الخروج (اختياري)',
-                                fontSize: 14.sp,
-                                fontWeight: departureTime != null
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                fontColor: departureTime != null
-                                    ? AppColors.primary
-                                    : const Color(0xFF888888),
-                              ),
-                            ),
-                            if (departureTime != null)
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    departureTime = null;
-                                  });
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  size: 20.sp,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  SizedBox(height: 16.h),
 
-                  SizedBox(height: 14.h),
-
-                  // =================== DRIVER SELECTION ===================
+                  // =================== DRIVER SELECTION (REQUIRED) ===================
                   CustomText(
                     title: 'اختر السواق *',
                     fontSize: 13.sp,
@@ -398,9 +282,77 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                   SizedBox(height: 14.h),
 
-                  // =================== DETAILS ===================
+                  // =================== FACTORY SELECTION (OPTIONAL) ===================
                   CustomText(
-                    title: 'تفاصيل الرحلة *',
+                    title: 'المصنع (اختياري)',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontColor: const Color(0xFF555555),
+                  ),
+
+                  SizedBox(height: 6.h),
+
+                  Container(
+                    height: 64.h,
+                    padding: EdgeInsets.symmetric(horizontal: 14.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(color: const Color(0xFFDCDCDC)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<FactoryEntity?>(
+                        isExpanded: true,
+                        hint: Row(
+                          children: [
+                            Icon(
+                              Icons.factory_outlined,
+                              color: AppColors.primary,
+                              size: 20.sp,
+                            ),
+                            SizedBox(width: 8.w),
+                            CustomText(
+                              title: 'بدون مصنع (رحلة عامة)',
+                              fontSize: 14.sp,
+                              fontColor: const Color(0xFF888888),
+                            ),
+                          ],
+                        ),
+                        value: selectedFactory,
+                        items: [
+                          DropdownMenuItem<FactoryEntity?>(
+                            value: null,
+                            child: CustomText(
+                              title: 'بدون مصنع (رحلة عامة)',
+                              fontSize: 14.sp,
+                              fontColor: const Color(0xFF888888),
+                            ),
+                          ),
+                          ...factories.map((factory) {
+                            return DropdownMenuItem<FactoryEntity?>(
+                              value: factory,
+                              child: CustomText(
+                                title: factory.name,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          }),
+                        ],
+                        onChanged: (val) {
+                          setState(() {
+                            selectedFactory = val;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 14.h),
+
+                  // =================== DETAILS (OPTIONAL) ===================
+                  CustomText(
+                    title: 'تفاصيل الرحلة (اختياري)',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
                     fontColor: const Color(0xFF555555),
@@ -416,19 +368,13 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                       size: 22.sp,
                       color: const Color(0xFF777B85),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'من فضلك أدخل تفاصيل الرحلة';
-                      }
-                      return null;
-                    },
                   ),
 
                   SizedBox(height: 14.h),
 
-                  // =================== DATE PICKER ===================
+                  // =================== DATE PICKER (OPTIONAL) ===================
                   CustomText(
-                    title: 'تاريخ الرحلة',
+                    title: 'تاريخ الرحلة (اختياري)',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
                     fontColor: const Color(0xFF555555),
@@ -468,13 +414,33 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                             color: AppColors.primary,
                           ),
                           SizedBox(width: 8.w),
-                          CustomText(
-                            title: selectedDate != null
-                                ? AppDateFormatter.format(selectedDate!)
-                                : 'اختر التاريخ',
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: CustomText(
+                              title: selectedDate != null
+                                  ? AppDateFormatter.format(selectedDate!)
+                                  : 'التاريخ غير محدد (اضغط للاختيار)',
+                              fontSize: 14.sp,
+                              fontWeight: selectedDate != null
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              fontColor: selectedDate != null
+                                  ? Colors.black87
+                                  : const Color(0xFF888888),
+                            ),
                           ),
+                          if (selectedDate != null)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedDate = null;
+                                });
+                              },
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 18.sp,
+                                color: Colors.grey,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -482,9 +448,83 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                   SizedBox(height: 14.h),
 
-                  // =================== REVENUE ===================
+                  // =================== TIME (OPTIONAL) ===================
                   CustomText(
-                    title: 'إيراد الرحلة (ج.م) *',
+                    title: 'وقت الرحلة / الخروج (اختياري)',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontColor: const Color(0xFF555555),
+                  ),
+
+                  SizedBox(height: 6.h),
+
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: departureTime ?? TimeOfDay.now(),
+                        helpText: 'اختر وقت الرحلة',
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          departureTime = picked;
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      height: 52.h,
+                      padding: EdgeInsets.symmetric(horizontal: 14.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBg,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 20.sp,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: CustomText(
+                              title: departureTime != null
+                                  ? _formatTimeOfDay(departureTime!)
+                                  : 'اختر وقت الرحلة (اختياري)',
+                              fontSize: 14.sp,
+                              fontWeight: departureTime != null
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              fontColor: departureTime != null
+                                  ? AppColors.primary
+                                  : const Color(0xFF888888),
+                            ),
+                          ),
+                          if (departureTime != null)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  departureTime = null;
+                                });
+                              },
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 20.sp,
+                                color: Colors.grey,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 14.h),
+
+                  // =================== REVENUE (OPTIONAL) ===================
+                  CustomText(
+                    title: 'إيراد الرحلة (ج.م) (اختياري)',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
                     fontColor: const Color(0xFF555555),
@@ -504,10 +544,9 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                       color: const Color(0xFF777B85),
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'من فضلك أدخل الإيراد';
-                      }
-                      if (parseArabicNumber(value) == null) {
+                      if (value != null &&
+                          value.trim().isNotEmpty &&
+                          parseArabicNumber(value) == null) {
                         return 'أدخل رقم صحيح';
                       }
                       return null;
@@ -516,9 +555,9 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                   SizedBox(height: 14.h),
 
-                  // =================== NORMAL EXPENSES ===================
+                  // =================== EXPENSES (OPTIONAL) ===================
                   CustomText(
-                    title: 'مصروف الرحلة (ج.م)',
+                    title: 'مصروف الرحلة (ج.م) (اختياري)',
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
                     fontColor: const Color(0xFF555555),
@@ -537,6 +576,14 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                       size: 22.sp,
                       color: const Color(0xFF777B85),
                     ),
+                    validator: (value) {
+                      if (value != null &&
+                          value.trim().isNotEmpty &&
+                          parseArabicNumber(value) == null) {
+                        return 'أدخل رقم صحيح';
+                      }
+                      return null;
+                    },
                   ),
 
                   SizedBox(height: 10.h),
@@ -559,247 +606,6 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                       color: const Color(0xFF777B85),
                     ),
                   ),
-
-                  SizedBox(height: 20.h),
-
-                  // =================== SAHRA TOGGLE ===================
-                  Material(
-                    color: isNightShift
-                        ? AppColors.lightGreen
-                        : AppColors.backgroundGray,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r),
-                      side: BorderSide(
-                        color: isNightShift
-                            ? AppColors.green
-                            : const Color(0xFFE0E0E0),
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 14.w,
-                        vertical: 6.h,
-                      ),
-                      child: SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Row(
-                          children: [
-                            Icon(
-                              Icons.nightlight_round,
-                              size: 20.sp,
-                              color: isNightShift
-                                  ? AppColors.green
-                                  : const Color(0xFF777777),
-                            ),
-                            SizedBox(width: 8.w),
-                            CustomText(
-                              title: 'سهرة (وردية إضافية)',
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700,
-                              fontColor: isNightShift
-                                  ? AppColors.green
-                                  : AppColors.primary,
-                            ),
-                          ],
-                        ),
-                        subtitle: Text(
-                          'تفعيل هذا الخيار في حالة قيام الأتوبيس بسهرة أو وردية ليلية إضافية',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: const Color(0xFF888888),
-                          ),
-                        ),
-                        activeThumbColor: AppColors.green,
-                        activeTrackColor: AppColors.lightGreen,
-                        value: isNightShift,
-                        onChanged: (val) {
-                          setState(() {
-                            isNightShift = val;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-
-                  // =================== SAHRA SECTION ===================
-                  if (isNightShift) ...[
-                    SizedBox(height: 14.h),
-                    Container(
-                      padding: EdgeInsets.all(14.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.lightGreen,
-                        borderRadius: BorderRadius.circular(16.r),
-                        border: Border.all(
-                          color: AppColors.green.withValues(alpha: 0.35),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.stars_rounded,
-                                color: AppColors.green,
-                                size: 20.sp,
-                              ),
-                              SizedBox(width: 6.w),
-                              CustomText(
-                                title: 'بيانات السهرة (اختياري بالكامل)',
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w700,
-                                fontColor: AppColors.green,
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: 12.h),
-
-                          // 1. تفاصيل السهرة
-                          CustomText(
-                            title: 'تفاصيل السهرة',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            fontColor: const Color(0xFF555555),
-                          ),
-                          SizedBox(height: 4.h),
-                          CustomTextFormField(
-                            controller: sahraDetailsController,
-                            hint: 'مثال: سهرة من المصنع لأكتوبر من 8 م لـ 4 ص...',
-                            prefix: Icon(
-                              Icons.description_outlined,
-                              size: 20.sp,
-                              color: const Color(0xFF777B85),
-                            ),
-                          ),
-
-                          SizedBox(height: 12.h),
-
-                          // 2. سائق السهرة
-                          CustomText(
-                            title: 'سائق السهرة',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            fontColor: const Color(0xFF555555),
-                          ),
-                          SizedBox(height: 4.h),
-                          Container(
-                            height: 60.h,
-                            padding: EdgeInsets.symmetric(horizontal: 14.w),
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: const Color(0xFFDCDCDC)),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<DriverEntity>(
-                                isExpanded: true,
-                                hint: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.person_outline_rounded,
-                                      color: const Color(0xFF777B85),
-                                      size: 18.sp,
-                                    ),
-                                    SizedBox(width: 8.w),
-                                    CustomText(
-                                      title: 'اختر سائق السهرة (اختياري)',
-                                      fontSize: 13.sp,
-                                      fontColor: const Color(0xFF888888),
-                                    ),
-                                  ],
-                                ),
-                                value: sahraDriver,
-                                items: widget.drivers.map((driver) {
-                                  return DropdownMenuItem<DriverEntity>(
-                                    value: driver,
-                                    child: CustomText(
-                                      title: driver.name,
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    sahraDriver = val;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: 12.h),
-
-                          // 3. إيراد السهرة
-                          CustomText(
-                            title: 'إيراد السهرة (ج.م)',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            fontColor: const Color(0xFF555555),
-                          ),
-                          SizedBox(height: 4.h),
-                          CustomTextFormField(
-                            controller: sahraRevenueController,
-                            hint: '0',
-                            textInputType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            prefix: Icon(
-                              Icons.attach_money_rounded,
-                              size: 20.sp,
-                              color: const Color(0xFF777B85),
-                            ),
-                          ),
-
-                          SizedBox(height: 12.h),
-
-                          // 4. مصروف السهرة
-                          CustomText(
-                            title: 'مصروف السهرة (ج.م)',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            fontColor: const Color(0xFF555555),
-                          ),
-                          SizedBox(height: 4.h),
-                          CustomTextFormField(
-                            controller: sahraExpensesController,
-                            hint: '0',
-                            textInputType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            prefix: Icon(
-                              Icons.money_off_rounded,
-                              size: 20.sp,
-                              color: const Color(0xFF777B85),
-                            ),
-                          ),
-
-                          SizedBox(height: 12.h),
-
-                          // 5. تفاصيل مصروف السهرة
-                          CustomText(
-                            title: 'تفاصيل مصروف السهرة',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            fontColor: const Color(0xFF555555),
-                          ),
-                          SizedBox(height: 4.h),
-                          CustomTextFormField(
-                            controller: sahraExpenseDetailsController,
-                            hint: 'مثال: سولار إضافي وطريق...',
-                            prefix: Icon(
-                              Icons.notes_rounded,
-                              size: 20.sp,
-                              color: const Color(0xFF777B85),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
 
                   SizedBox(height: 24.h),
 
@@ -825,13 +631,6 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                       final expenses =
                           parseArabicNumber(expensesController.text) ?? 0.0;
 
-                      final sahraRev = isNightShift
-                          ? parseArabicNumber(sahraRevenueController.text)
-                          : null;
-                      final sahraExp = isNightShift
-                          ? parseArabicNumber(sahraExpensesController.text)
-                          : null;
-
                       final trip = TripEntity(
                         id: '',
                         driverId: selectedDriver!.id,
@@ -848,25 +647,11 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                                 : null,
                         factoryId: selectedFactory?.id,
                         factoryName: selectedFactory?.name,
-                        departureTime: (selectedFactory != null &&
-                                departureTime != null)
+                        departureTime: departureTime != null
                             ? _formatTimeOfDay(departureTime!)
                             : null,
-                        isNightShift: isNightShift,
-                        sahraDetails: isNightShift &&
-                                sahraDetailsController.text.trim().isNotEmpty
-                            ? sahraDetailsController.text.trim()
-                            : null,
-                        sahraDriverId: isNightShift ? sahraDriver?.id : null,
-                        sahraDriverName: isNightShift ? sahraDriver?.name : null,
-                        sahraRevenue: sahraRev,
-                        sahraExpense: sahraExp,
-                        sahraExpenseDetails: isNightShift &&
-                                sahraExpenseDetailsController.text
-                                    .trim()
-                                    .isNotEmpty
-                            ? sahraExpenseDetailsController.text.trim()
-                            : null,
+                        type: TripType.trip,
+                        tripDate: selectedDate,
                         createdAt: selectedDate ?? DateTime.now(),
                       );
 
@@ -905,3 +690,4 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
     );
   }
 }
+

@@ -8,20 +8,17 @@ import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BusNotifier extends AsyncNotifier<List<BusEntity>> {
-  late final GetBusesUseCase _getBusesUseCase;
-  late final GetBusUseCase _getBusUseCase;
-  late final AddBusUseCase _addBusUseCase;
-  late final UpdateBusUseCase _updateBusUseCase;
-  late final DeleteBusUseCase _deleteBusUseCase;
+  // Use cases are read directly from ref on each use to avoid
+  // LateInitializationError when build() is called more than once
+  // (e.g. after ref.invalidate(busProvider)).
+  GetBusesUseCase get _getBusesUseCase => ref.read(getBusesUseCaseProvider);
+  GetBusUseCase get _getBusUseCase => ref.read(getBusUseCaseProvider);
+  AddBusUseCase get _addBusUseCase => ref.read(addBusUseCaseProvider);
+  UpdateBusUseCase get _updateBusUseCase => ref.read(updateBusUseCaseProvider);
+  DeleteBusUseCase get _deleteBusUseCase => ref.read(deleteBusUseCaseProvider);
 
   @override
   Future<List<BusEntity>> build() async {
-    _getBusesUseCase = ref.read(getBusesUseCaseProvider);
-    _getBusUseCase = ref.read(getBusUseCaseProvider);
-    _addBusUseCase = ref.read(addBusUseCaseProvider);
-    _updateBusUseCase = ref.read(updateBusUseCaseProvider);
-    _deleteBusUseCase = ref.read(deleteBusUseCaseProvider);
-
     return await _getBusesUseCase();
   }
 

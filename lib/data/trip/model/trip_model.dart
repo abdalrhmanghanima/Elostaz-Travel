@@ -9,14 +9,16 @@ class TripModel extends TripEntity {
     required super.busId,
     required super.busName,
     required super.plateNumber,
-    required super.details,
-    required super.revenue,
-    required super.createdAt,
-    required super.expenses,
+    super.details = '',
+    super.revenue = 0.0,
+    super.expenses = 0.0,
     super.expenseDetails,
     super.factoryId,
     super.factoryName,
     super.departureTime,
+    super.type = TripType.trip,
+    required super.createdAt,
+    super.tripDate,
     super.isNightShift = false,
     super.expenseItems = const [],
     super.sahraDetails,
@@ -41,6 +43,36 @@ class TripModel extends TripEntity {
           .toList();
     }
 
+    // Resolution order for type:
+    // 1. If explicit 'type' field exists, use it.
+    // 2. Else if legacy isNightShift == true, use 'night_outing'.
+    // 3. Otherwise, fallback to 'trip'.
+    String recordType = TripType.trip;
+    if (data['type'] != null && data['type'].toString().trim().isNotEmpty) {
+      final rawType = data['type'].toString().trim();
+      if (rawType == 'night_outing' || rawType == 'sahra') {
+        recordType = TripType.nightOuting;
+      } else {
+        recordType = TripType.trip;
+      }
+    } else if (data['isNightShift'] == true) {
+      recordType = TripType.nightOuting;
+    }
+
+    DateTime? parsedTripDate;
+    if (data['tripDate'] is Timestamp) {
+      parsedTripDate = (data['tripDate'] as Timestamp).toDate();
+    } else if (data['tripDate'] is String && (data['tripDate'] as String).isNotEmpty) {
+      parsedTripDate = DateTime.tryParse(data['tripDate']);
+    }
+
+    DateTime parsedCreatedAt = DateTime.now();
+    if (data['createdAt'] is Timestamp) {
+      parsedCreatedAt = (data['createdAt'] as Timestamp).toDate();
+    } else if (data['createdAt'] is String && (data['createdAt'] as String).isNotEmpty) {
+      parsedCreatedAt = DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+    }
+
     return TripModel(
       id: document.id,
       driverId: data['driverId']?.toString() ?? '',
@@ -49,9 +81,8 @@ class TripModel extends TripEntity {
       busName: data['busName']?.toString() ?? '',
       plateNumber: data['plateNumber']?.toString() ?? '',
       details: data['details']?.toString() ?? '',
-      revenue: double.tryParse(
-            data['revenue']?.toString() ?? '',
-          ) ??
+      revenue: (data['revenue'] as num?)?.toDouble() ??
+          double.tryParse(data['revenue']?.toString() ?? '') ??
           0.0,
       expenses: (data['expenses'] as num?)?.toDouble() ??
           double.tryParse(data['expenses']?.toString() ?? '') ??
@@ -60,7 +91,10 @@ class TripModel extends TripEntity {
       factoryId: data['factoryId'] as String?,
       factoryName: data['factoryName'] as String?,
       departureTime: data['departureTime']?.toString(),
-      isNightShift: data['isNightShift'] == true,
+      type: recordType,
+      createdAt: parsedCreatedAt,
+      tripDate: parsedTripDate,
+      isNightShift: data['isNightShift'] == true || recordType == TripType.nightOuting,
       expenseItems: items,
       sahraDetails: data['sahraDetails']?.toString(),
       sahraDriverId: data['sahraDriverId']?.toString(),
@@ -70,9 +104,6 @@ class TripModel extends TripEntity {
       sahraExpense: (data['sahraExpense'] as num?)?.toDouble() ??
           double.tryParse(data['sahraExpense']?.toString() ?? ''),
       sahraExpenseDetails: data['sahraExpenseDetails']?.toString(),
-      createdAt: data['createdAt'] is Timestamp
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
     );
   }
 
@@ -86,12 +117,14 @@ class TripModel extends TripEntity {
       plateNumber: entity.plateNumber,
       details: entity.details,
       revenue: entity.revenue,
-      createdAt: entity.createdAt,
       expenses: entity.expenses,
       expenseDetails: entity.expenseDetails,
       factoryId: entity.factoryId,
       factoryName: entity.factoryName,
       departureTime: entity.departureTime,
+      type: entity.type,
+      createdAt: entity.createdAt,
+      tripDate: entity.tripDate,
       isNightShift: entity.isNightShift,
       expenseItems: entity.expenseItems,
       sahraDetails: entity.sahraDetails,
@@ -113,6 +146,9 @@ class TripModel extends TripEntity {
       'details': details,
       'revenue': revenue,
       'expenses': expenses,
+      'type': type,
+      'createdAt': Timestamp.fromDate(createdAt),
+      if (tripDate != null) 'tripDate': Timestamp.fromDate(tripDate!),
       if (expenseDetails != null && expenseDetails!.isNotEmpty)
         'expenseDetails': expenseDetails,
       if (factoryId != null && factoryId!.isNotEmpty) 'factoryId': factoryId,
@@ -120,7 +156,7 @@ class TripModel extends TripEntity {
         'factoryName': factoryName,
       if (departureTime != null && departureTime!.trim().isNotEmpty)
         'departureTime': departureTime!.trim(),
-      'isNightShift': isNightShift,
+      'isNightShift': isNightShift || isNightOuting,
       if (expenseItems.isNotEmpty)
         'expenseItems': expenseItems.map((e) => e.toMap()).toList(),
       if (sahraDetails != null && sahraDetails!.isNotEmpty)
@@ -133,7 +169,6 @@ class TripModel extends TripEntity {
       if (sahraExpense != null) 'sahraExpense': sahraExpense,
       if (sahraExpenseDetails != null && sahraExpenseDetails!.isNotEmpty)
         'sahraExpenseDetails': sahraExpenseDetails,
-      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 }

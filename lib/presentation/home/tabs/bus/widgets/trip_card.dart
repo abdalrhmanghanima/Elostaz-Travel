@@ -1,5 +1,6 @@
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
+import 'package:elostaz_travel/core/utils/app_date_picker.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_actions_bottom_sheet.dart';
@@ -24,11 +25,18 @@ class TripCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final netRevenue = trip.revenue - trip.expenses;
+    final bool isNight = trip.isNightOuting;
     final bool hasFactory =
         trip.factoryName != null && trip.factoryName!.trim().isNotEmpty;
     final bool hasDepartureTime =
         trip.departureTime != null && trip.departureTime!.trim().isNotEmpty;
-    final bool hasSahraSection = trip.hasSahra;
+
+    // Date formatting: if year is <= 1970, treat as unspecified
+    final effectiveDate = trip.effectiveDate;
+    final bool isDateValid = effectiveDate.year > 1970;
+    final String formattedDate = isDateValid
+        ? AppDateFormatter.format(effectiveDate)
+        : 'التاريخ غير محدد';
 
     return InkWell(
       onTap: () {
@@ -68,8 +76,7 @@ class TripCard extends ConsumerWidget {
                     driversProvider,
                   );
 
-                  if (trip.factoryId != null &&
-                      trip.factoryId!.isNotEmpty) {
+                  if (trip.factoryId != null && trip.factoryId!.isNotEmpty) {
                     ref.invalidate(
                       factoryTripsProvider(trip.factoryId!),
                     );
@@ -94,7 +101,10 @@ class TripCard extends ConsumerWidget {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: Colors.grey.shade200,
+            color: isNight
+                ? AppColors.green.withValues(alpha: 0.3)
+                : Colors.grey.shade200,
+            width: isNight ? 1.2 : 1.0,
           ),
           boxShadow: [
             BoxShadow(
@@ -106,78 +116,84 @@ class TripCard extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            // Top badges (Date & Driver/Bus)
+            // Top Row: Date & Badges (Type Badge + Date + Driver/Bus)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Date Section
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomText(
                         title: 'التاريخ',
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w400,
                         fontColor: const Color(0xFF777B85),
                       ),
                       SizedBox(height: 4.h),
                       CustomText(
-                        title:
-                            '${trip.createdAt.day}-${trip.createdAt.month}-${trip.createdAt.year}',
-                        fontSize: 16.sp,
+                        title: formattedDate,
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ],
                   ),
                 ),
 
-                if (trip.isNightShift)
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 6.w),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGreen,
-                      borderRadius: BorderRadius.circular(8.r),
-                      border: Border.all(
-                        color: AppColors.green,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.nights_stay_rounded,
-                          size: 14.sp,
-                          color: AppColors.green,
-                        ),
-                        SizedBox(width: 4.w),
-                        CustomText(
-                          title: 'سهرة',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                          fontColor: AppColors.green,
-                        ),
-                      ],
+                // Type Badge: رحلة vs سهرة
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isNight
+                        ? const Color(0xFFF0FDF4)
+                        : const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: isNight
+                          ? const Color(0xFF86EFAC)
+                          : const Color(0xFFBFDBFE),
                     ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isNight
+                            ? Icons.nightlight_round
+                            : Icons.directions_bus_rounded,
+                        size: 14.sp,
+                        color: isNight ? AppColors.green : AppColors.primary,
+                      ),
+                      SizedBox(width: 4.w),
+                      CustomText(
+                        title: trip.typeLabel,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                        fontColor: isNight ? AppColors.green : AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
 
+                // Bus / Driver
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       CustomText(
                         title: showBus ? 'الأتوبيس' : 'السائق',
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w400,
                         fontColor: const Color(0xFF777B85),
                       ),
                       SizedBox(height: 4.h),
                       CustomText(
                         title: showBus ? trip.busName : trip.driverName,
-                        fontSize: 16.sp,
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
                         textAlign: TextAlign.right,
                       ),
@@ -201,6 +217,27 @@ class TripCard extends ConsumerWidget {
                   SizedBox(width: 4.w),
                   Icon(
                     Icons.person_outline_rounded,
+                    size: 15.sp,
+                    color: const Color(0xFF777B85),
+                  ),
+                ],
+              ),
+            ],
+
+            if (!showBus && busId == null && trip.busName.isNotEmpty) ...[
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  CustomText(
+                    title: 'الأتوبيس: ${trip.busName}',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                    fontColor: const Color(0xFF555555),
+                  ),
+                  SizedBox(width: 4.w),
+                  Icon(
+                    Icons.directions_bus_rounded,
                     size: 15.sp,
                     color: const Color(0xFF777B85),
                   ),
@@ -360,7 +397,9 @@ class TripCard extends ConsumerWidget {
                         title: '${netRevenue.toStringAsFixed(0)} ج.م',
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
-                        fontColor: AppColors.primary,
+                        fontColor: netRevenue >= 0
+                            ? (isNight ? AppColors.green : AppColors.primary)
+                            : AppColors.red,
                       ),
                     ],
                   ),
@@ -461,6 +500,7 @@ class TripCard extends ConsumerWidget {
               ),
             ],
 
+            // Trip details if present
             if (trip.details.trim().isNotEmpty) ...[
               SizedBox(height: 10.h),
               Container(
@@ -479,7 +519,7 @@ class TripCard extends ConsumerWidget {
                     ),
                     SizedBox(width: 6.w),
                     CustomText(
-                      title: 'تفاصيل الرحلة: ',
+                      title: isNight ? 'تفاصيل السهرة: ' : 'تفاصيل الرحلة: ',
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       fontColor: const Color(0xFF64748B),
@@ -497,10 +537,8 @@ class TripCard extends ConsumerWidget {
               ),
             ],
 
-            // =========================================================
-            // DEDICATED SAHRA (NIGHT SHIFT) SECTION
-            // =========================================================
-            if (hasSahraSection) ...[
+            // Legacy Sahra Section for old documents containing embedded sahra fields
+            if (trip.hasLegacySahra && !trip.isNightOuting) ...[
               SizedBox(height: 12.h),
               Container(
                 width: double.infinity,
@@ -524,7 +562,7 @@ class TripCard extends ConsumerWidget {
                         ),
                         SizedBox(width: 6.w),
                         CustomText(
-                          title: 'بيانات السهرة (وردية إضافية)',
+                          title: 'بيانات السهرة الملحقة',
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                           fontColor: AppColors.green,
@@ -624,29 +662,6 @@ class TripCard extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                        ],
-                      ),
-                    ],
-
-                    if (trip.sahraExpenseDetails != null &&
-                        trip.sahraExpenseDetails!.trim().isNotEmpty) ...[
-                      SizedBox(height: 4.h),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CustomText(
-                            title: 'تفاصيل المصروف: ',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            fontColor: const Color(0xFF666666),
-                          ),
-                          Expanded(
-                            child: CustomText(
-                              title: trip.sahraExpenseDetails!,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
                         ],
                       ),
                     ],

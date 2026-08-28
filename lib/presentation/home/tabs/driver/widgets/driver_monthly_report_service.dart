@@ -15,107 +15,48 @@ class DriverMonthlyReportService {
   }) async {
     final now = DateTime.now();
 
-    // ============================================================
-    // MONTHLY DATA
-    // ============================================================
-
+    // Monthly trips
     final monthlyTrips = trips.where((trip) {
-      return trip.createdAt.year == now.year &&
-          trip.createdAt.month == now.month;
-    }).toList();
+      final date = trip.effectiveDate;
+      return date.year == now.year && date.month == now.month;
+    }).toList()
+      ..sort((a, b) => b.effectiveDate.compareTo(a.effectiveDate));
 
+    final tripsCount = monthlyTrips.where((t) => t.isTrip).length;
+    final nightOutingsCount = monthlyTrips.where((t) => t.isNightOuting).length;
+
+    // Monthly Advances
     final monthlyAdvances = advances.where((advance) {
-      return advance.date.year == now.year &&
-          advance.date.month == now.month;
-    }).toList();
+      return advance.date.year == now.year && advance.date.month == now.month;
+    }).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
 
-    final monthlyActiveAdvances = monthlyAdvances.where((advance) {
-      return advance.isActive;
-    }).toList();
-
-    final monthlyPaidAdvances = monthlyAdvances.where((advance) {
-      return advance.isPaid;
-    }).toList();
-
-    // ============================================================
-    // NORMAL TRIP FINANCIALS
-    // ============================================================
-
-    final normalRevenue = monthlyTrips.fold<double>(
+    // Financial Totals (Unified)
+    final totalRevenue = monthlyTrips.fold<double>(
       0,
-          (sum, trip) => sum + trip.revenue,
+      (sum, trip) => sum + trip.revenue,
     );
 
-    final normalExpenses = monthlyTrips.fold<double>(
+    final totalExpenses = monthlyTrips.fold<double>(
       0,
-          (sum, trip) => sum + trip.expenses,
+      (sum, trip) => sum + trip.expenses,
     );
-
-    // ============================================================
-    // SAHRA FINANCIALS
-    // ============================================================
-
-    final totalSahraRevenue = monthlyTrips.fold<double>(
-      0,
-          (sum, trip) => sum + (trip.sahraRevenue ?? 0),
-    );
-
-    final totalSahraExpenses = monthlyTrips.fold<double>(
-      0,
-          (sum, trip) => sum + (trip.sahraExpense ?? 0),
-    );
-
-    // ============================================================
-    // TOTAL FINANCIALS
-    // ============================================================
-
-    final totalRevenue = normalRevenue + totalSahraRevenue;
-
-    final totalExpenses = normalExpenses + totalSahraExpenses;
 
     final totalNetRevenue = totalRevenue - totalExpenses;
 
-    // ============================================================
-    // ADVANCES
-    // ============================================================
+    final outstandingAdvances = advances
+        .where((a) => a.isActive)
+        .fold<double>(0, (sum, a) => sum + a.amount);
 
-    final activeAdvances = advances.where((advance) {
-      return advance.isActive;
-    }).toList();
 
-    final paidAdvances = advances.where((advance) {
-      return advance.isPaid;
-    }).toList();
-
-    final outstandingAdvances = activeAdvances.fold<double>(
-      0,
-          (sum, advance) => sum + advance.amount,
-    );
-
-    final paidAdvancesTotal = paidAdvances.fold<double>(
-      0,
-          (sum, advance) => sum + advance.amount,
-    );
-
-    // ============================================================
-    // FONTS
-    // ============================================================
-
+    // Fonts
     final regularFont = pw.Font.ttf(
-      await rootBundle.load(
-        'assets/fonts/Cairo-Regular.ttf',
-      ),
+      await rootBundle.load('assets/fonts/Cairo-Regular.ttf'),
     );
 
     final boldFont = pw.Font.ttf(
-      await rootBundle.load(
-        'assets/fonts/Cairo-Bold.ttf',
-      ),
+      await rootBundle.load('assets/fonts/Cairo-Bold.ttf'),
     );
-
-    // ============================================================
-    // PDF
-    // ============================================================
 
     final pdf = pw.Document();
 
@@ -129,23 +70,12 @@ class DriverMonthlyReportService {
         pageFormat: PdfPageFormat.a4,
         theme: theme,
         textDirection: pw.TextDirection.rtl,
-        margin: const pw.EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          20,
-        ),
-
-        // ========================================================
-        // FOOTER
-        // ========================================================
-
+        margin: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         footer: (context) {
           return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 8),
+            margin: const pw.EdgeInsets.only(top: 6),
             child: pw.Row(
-              mainAxisAlignment:
-              pw.MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
                   'صفحة ${context.pageNumber} من ${context.pagesCount}',
@@ -156,7 +86,7 @@ class DriverMonthlyReportService {
                   ),
                 ),
                 pw.Text(
-                  'تقرير رحلات السواق',
+                  'تقرير عمليات السائق — شركة الأستاذ للنقل السياحي',
                   style: pw.TextStyle(
                     font: regularFont,
                     fontSize: 8,
@@ -167,49 +97,39 @@ class DriverMonthlyReportService {
             ),
           );
         },
-
-        // ========================================================
-        // CONTENT
-        // ========================================================
-
         build: (context) {
-          return [
-            // ====================================================
-            // HEADER
-            // ====================================================
+          final List<pw.Widget> widgets = [];
 
+          // Header
+          widgets.add(
             pw.Row(
-              mainAxisAlignment:
-              pw.MainAxisAlignment.spaceBetween,
-              crossAxisAlignment:
-              pw.CrossAxisAlignment.start,
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Column(
-                  crossAxisAlignment:
-                  pw.CrossAxisAlignment.start,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'تقرير رحلات السواق',
+                      'تقرير حساب وعمليات السائق',
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 20,
+                        fontSize: 17,
+                        color: PdfColors.blue900,
                       ),
                     ),
-                    pw.SizedBox(height: 3),
+                    pw.SizedBox(height: 2),
                     pw.Text(
                       'شهر ${_monthName(now.month)} ${now.year}',
                       style: pw.TextStyle(
                         font: regularFont,
                         fontSize: 10,
-                        color: PdfColors.grey600,
+                        color: PdfColors.grey700,
                       ),
                     ),
                   ],
                 ),
-
                 pw.Column(
-                  crossAxisAlignment:
-                  pw.CrossAxisAlignment.end,
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
                       driver.name,
@@ -218,61 +138,72 @@ class DriverMonthlyReportService {
                         fontSize: 15,
                       ),
                     ),
-                    pw.SizedBox(height: 3),
-                    pw.Text(
-                      driver.phone,
-                      style: pw.TextStyle(
-                        font: regularFont,
-                        fontSize: 10,
-                        color: PdfColors.grey600,
+                    if (driver.phone.isNotEmpty) ...[
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        'هاتف: ${driver.phone}',
+                        style: pw.TextStyle(
+                          font: regularFont,
+                          fontSize: 10,
+                          color: PdfColors.grey700,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
             ),
+          );
 
-            pw.SizedBox(height: 14),
+          widgets.add(pw.SizedBox(height: 10));
 
-            // ====================================================
-            // DRIVER DOCUMENTS
-            // ====================================================
-
-            _sectionTitle(
-              'مستندات السواق',
-              boldFont,
-            ),
-
+          // Summary KPIs
+          widgets.add(
             pw.Container(
-              padding: const pw.EdgeInsets.all(10),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: pw.BoxDecoration(
                 color: PdfColors.grey100,
-                borderRadius:
-                pw.BorderRadius.circular(7),
-                border: pw.Border.all(
-                  color: PdfColors.grey300,
-                ),
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
               ),
               child: pw.Row(
                 children: [
                   pw.Expanded(
-                    child: _documentStatus(
-                      title: 'صورة البطاقة',
-                      available:
-                      driver.idCardImageUrl != null &&
-                          driver.idCardImageUrl!
-                              .isNotEmpty,
+                    child: _smallSummary(
+                      title: 'إجمالي العمليات',
+                      value: '${monthlyTrips.length} ($tripsCount رحلة + $nightOutingsCount سهرة)',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
                   ),
                   pw.Expanded(
-                    child: _documentStatus(
-                      title: 'صورة الرخصة',
-                      available:
-                      driver.licenseImageUrl != null &&
-                          driver.licenseImageUrl!
-                              .isNotEmpty,
+                    child: _smallSummary(
+                      title: 'إجمالي الإيراد',
+                      value: '${totalRevenue.toStringAsFixed(0)} ج.م',
+                      regularFont: regularFont,
+                      boldFont: boldFont,
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: _smallSummary(
+                      title: 'إجمالي المصروفات',
+                      value: '${totalExpenses.toStringAsFixed(0)} ج.م',
+                      regularFont: regularFont,
+                      boldFont: boldFont,
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: _smallSummary(
+                      title: 'الصافي',
+                      value: '${totalNetRevenue.toStringAsFixed(0)} ج.م',
+                      regularFont: regularFont,
+                      boldFont: boldFont,
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: _smallSummary(
+                      title: 'السلف المستحقة',
+                      value: '${outstandingAdvances.toStringAsFixed(0)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
@@ -280,953 +211,211 @@ class DriverMonthlyReportService {
                 ],
               ),
             ),
+          );
 
-            pw.SizedBox(height: 14),
+          widgets.add(pw.SizedBox(height: 10));
 
-            // ====================================================
-            // FINANCIAL SUMMARY
-            // ====================================================
+          // Operations Section
+          widgets.add(
+            _sectionTitle('تفاصيل العمليات والرحلات', boldFont),
+          );
 
-            _sectionTitle(
-              'الملخص المالي',
-              boldFont,
-            ),
-
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 9,
-              ),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius:
-                pw.BorderRadius.circular(7),
-                border: pw.Border.all(
-                  color: PdfColors.grey300,
+          if (monthlyTrips.isEmpty) {
+            widgets.add(
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(18),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Center(
+                  child: pw.Text(
+                    'لا توجد رحلات أو سهرات مسجلة لهذا السائق خلال هذا الشهر',
+                    style: pw.TextStyle(font: regularFont, fontSize: 11),
+                  ),
                 ),
               ),
-              child: pw.Column(
+            );
+          } else {
+            widgets.add(
+              pw.TableHelper.fromTextArray(
+                headers: [
+                  'النوع',
+                  'التاريخ',
+                  'الأتوبيس',
+                  'المصنع / الجهة',
+                  'التفاصيل وملاحظات المصروف',
+                  'الإيراد',
+                  'المصروف',
+                  'الصافي',
+                ],
+                data: monthlyTrips.map((trip) {
+                  final net = trip.revenue - trip.expenses;
+                  final factoryLabel = (trip.factoryName != null && trip.factoryName!.trim().isNotEmpty)
+                      ? trip.factoryName!
+                      : '-';
+
+                  String details = trip.details.trim();
+                  if (trip.expenseDetails != null && trip.expenseDetails!.trim().isNotEmpty) {
+                    if (details.isNotEmpty) {
+                      details += '\n[مصروف: ${trip.expenseDetails!.trim()}]';
+                    } else {
+                      details = '[مصروف: ${trip.expenseDetails!.trim()}]';
+                    }
+                  }
+                  if (details.isEmpty) details = '-';
+
+                  final dateStr = trip.effectiveDate.year > 1970
+                      ? _formatDate(trip.effectiveDate)
+                      : 'غير محدد';
+
+                  return [
+                    trip.typeLabel,
+                    dateStr,
+                    trip.busName.isNotEmpty ? trip.busName : '-',
+                    factoryLabel,
+                    details,
+                    '${trip.revenue.toStringAsFixed(0)} ج.م',
+                    '${trip.expenses.toStringAsFixed(0)} ج.م',
+                    '${net.toStringAsFixed(0)} ج.م',
+                  ];
+                }).toList(),
+                headerStyle: pw.TextStyle(
+                  font: boldFont,
+                  fontSize: 7.5,
+                ),
+                cellStyle: pw.TextStyle(
+                  font: regularFont,
+                  fontSize: 7,
+                ),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                ),
+                border: pw.TableBorder.all(
+                  color: PdfColors.grey300,
+                  width: 0.5,
+                ),
+                cellPadding: const pw.EdgeInsets.symmetric(
+                  horizontal: 3,
+                  vertical: 3,
+                ),
+                cellAlignment: pw.Alignment.center,
+                headerAlignment: pw.Alignment.center,
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(40),
+                  1: const pw.FixedColumnWidth(50),
+                  2: const pw.FixedColumnWidth(60),
+                  3: const pw.FixedColumnWidth(60),
+                  4: const pw.FlexColumnWidth(2.5),
+                  5: const pw.FixedColumnWidth(45),
+                  6: const pw.FixedColumnWidth(45),
+                  7: const pw.FixedColumnWidth(45),
+                },
+              ),
+            );
+          }
+
+          // Advances Section
+          if (monthlyAdvances.isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 12));
+            widgets.add(_sectionTitle('سلف السائق خلال الشهر', boldFont));
+
+            widgets.add(
+              pw.TableHelper.fromTextArray(
+                headers: ['التاريخ', 'المبلغ', 'الحالة', 'البيان والتفاصيل'],
+                data: monthlyAdvances.map((adv) {
+                  return [
+                    _formatDate(adv.date),
+                    '${adv.amount.toStringAsFixed(0)} ج.م',
+                    adv.isActive ? 'مستحقة' : 'تم السداد',
+                    adv.note.isNotEmpty ? adv.note : '-',
+                  ];
+                }).toList(),
+                headerStyle: pw.TextStyle(font: boldFont, fontSize: 7.5),
+                cellStyle: pw.TextStyle(font: regularFont, fontSize: 7),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                cellAlignment: pw.Alignment.center,
+                headerAlignment: pw.Alignment.center,
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(60),
+                  1: const pw.FixedColumnWidth(60),
+                  2: const pw.FixedColumnWidth(60),
+                  3: const pw.FlexColumnWidth(2),
+                },
+              ),
+            );
+          }
+
+          // Final Settlement Summary
+          widgets.add(pw.SizedBox(height: 10));
+
+          widgets.add(
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Row(
-                    children: [
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'الرحلات',
-                          value:
-                          '${monthlyTrips.length}',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'الإيرادات',
-                          value:
-                          '${totalRevenue.toStringAsFixed(0)} ج.م',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'المصروفات',
-                          value:
-                          '${totalExpenses.toStringAsFixed(0)} ج.م',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'الصافي',
-                          value:
-                          '${totalNetRevenue.toStringAsFixed(0)} ج.م',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                    ],
+                  pw.Text(
+                    'إجمالي الإيرادات: ${totalRevenue.toStringAsFixed(0)} ج.م',
+                    style: pw.TextStyle(font: boldFont, fontSize: 8.5),
                   ),
-
-                  pw.SizedBox(height: 10),
-
-                  pw.Divider(
-                    color: PdfColors.grey300,
+                  pw.Text(
+                    'إجمالي المصروفات: ${totalExpenses.toStringAsFixed(0)} ج.م',
+                    style: pw.TextStyle(font: boldFont, fontSize: 8.5),
                   ),
-
-                  pw.SizedBox(height: 6),
-
-                  pw.Row(
-                    children: [
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'إيراد السهرات',
-                          value:
-                          '${totalSahraRevenue.toStringAsFixed(0)} ج.م',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'مصروف السهرات',
-                          value:
-                          '${totalSahraExpenses.toStringAsFixed(0)} ج.م',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                      pw.Expanded(
-                        child: _smallSummary(
-                          title: 'السلف المستحقة',
-                          value:
-                          '${outstandingAdvances.toStringAsFixed(0)} ج.م',
-                          regularFont: regularFont,
-                          boldFont: boldFont,
-                        ),
-                      ),
-                    ],
+                  pw.Text(
+                    'صافي العمليات: ${totalNetRevenue.toStringAsFixed(0)} ج.م',
+                    style: pw.TextStyle(
+                      font: boldFont,
+                      fontSize: 9.5,
+                      color: totalNetRevenue >= 0 ? PdfColors.green800 : PdfColors.red800,
+                    ),
+                  ),
+                  pw.Text(
+                    'السلف المستحقة: ${outstandingAdvances.toStringAsFixed(0)} ج.م',
+                    style: pw.TextStyle(
+                      font: boldFont,
+                      fontSize: 8.5,
+                      color: PdfColors.red800,
+                    ),
                   ),
                 ],
               ),
             ),
+          );
 
-            pw.SizedBox(height: 16),
-
-            // ====================================================
-            // TRIPS
-            // ====================================================
-
-            _sectionTitle(
-              'تفاصيل الرحلات',
-              boldFont,
-            ),
-
-            if (monthlyTrips.isEmpty)
-              pw.Container(
-                width: double.infinity,
-                padding:
-                const pw.EdgeInsets.all(25),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius:
-                  pw.BorderRadius.circular(7),
-                ),
-                child: pw.Center(
-                  child: pw.Text(
-                    'لا توجد رحلات لهذا السواق خلال هذا الشهر',
-                    style: pw.TextStyle(
-                      font: regularFont,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ...monthlyTrips.map(
-                    (trip) => _buildTripCard(
-                  trip: trip,
-                  regularFont: regularFont,
-                  boldFont: boldFont,
-                ),
-              ),
-
-            pw.SizedBox(height: 16),
-
-            // ====================================================
-            // ADVANCES
-            // ====================================================
-
-            _sectionTitle(
-              'سلف السواق',
-              boldFont,
-            ),
-
-            if (monthlyAdvances.isEmpty)
-              pw.Container(
-                width: double.infinity,
-                padding:
-                const pw.EdgeInsets.all(18),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius:
-                  pw.BorderRadius.circular(7),
-                ),
-                child: pw.Center(
-                  child: pw.Text(
-                    'لا توجد سلف مسجلة خلال هذا الشهر',
-                    style: pw.TextStyle(
-                      font: regularFont,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              )
-            else ...[
-              _buildAdvanceSummary(
-                activeTotal: outstandingAdvances,
-                paidTotal: paidAdvancesTotal,
-                regularFont: regularFont,
-                boldFont: boldFont,
-              ),
-
-              pw.SizedBox(height: 10),
-
-              if (monthlyActiveAdvances.isNotEmpty) ...[
-                _advanceSectionHeader(
-                  'السلف المستحقة',
-                  boldFont,
-                  color: PdfColors.red900,
-                  badgeText: '${monthlyActiveAdvances.length} سلفة',
-                ),
-                pw.SizedBox(height: 6),
-                ...monthlyActiveAdvances.map(
-                  (advance) => _buildAdvanceCard(
-                    advance: advance,
-                    regularFont: regularFont,
-                    boldFont: boldFont,
-                  ),
-                ),
-                pw.SizedBox(height: 8),
-              ],
-
-              if (monthlyPaidAdvances.isNotEmpty) ...[
-                _advanceSectionHeader(
-                  'السلف التي تم سدادها',
-                  boldFont,
-                  color: PdfColors.green900,
-                  badgeText: '${monthlyPaidAdvances.length} سلفة مسددة',
-                ),
-                pw.SizedBox(height: 6),
-                ...monthlyPaidAdvances.map(
-                  (advance) => _buildAdvanceCard(
-                    advance: advance,
-                    regularFont: regularFont,
-                    boldFont: boldFont,
-                  ),
-                ),
-              ],
-            ],
-
-            pw.SizedBox(height: 14),
-
-            // ====================================================
-            // FINAL SUMMARY
-            // ====================================================
-
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 9,
-              ),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius:
-                pw.BorderRadius.circular(7),
-                border: pw.Border.all(
-                  color: PdfColors.grey300,
-                ),
-              ),
-              child: pw.Column(
-                children: [
-                  pw.Row(
-                    mainAxisAlignment:
-                    pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'إجمالي الإيرادات:',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.Text(
-                        '${totalRevenue.toStringAsFixed(0)} ج.م',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  pw.SizedBox(height: 5),
-
-                  pw.Row(
-                    mainAxisAlignment:
-                    pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'إجمالي المصروفات:',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.Text(
-                        '${totalExpenses.toStringAsFixed(0)} ج.م',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  pw.SizedBox(height: 5),
-
-                  pw.Divider(
-                    color: PdfColors.grey300,
-                  ),
-
-                  pw.Row(
-                    mainAxisAlignment:
-                    pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'الصافي:',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 11,
-                        ),
-                      ),
-                      pw.Text(
-                        '${totalNetRevenue.toStringAsFixed(0)} ج.م',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  pw.SizedBox(height: 8),
-
-                  pw.Row(
-                    mainAxisAlignment:
-                    pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'السلف المستحقة على السواق:',
-                        style: pw.TextStyle(
-                          font: regularFont,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.Text(
-                        '${outstandingAdvances.toStringAsFixed(0)} ج.م',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ];
+          return widgets;
         },
       ),
     );
 
-    // ============================================================
-    // SHARE PDF
-    // ============================================================
-
     await Printing.sharePdf(
       bytes: await pdf.save(),
-      filename:
-      'تقرير_${driver.name}_${now.year}_${now.month}.pdf',
+      filename: 'تقرير_${driver.name}_${now.year}_${now.month}.pdf',
     );
   }
 
-  // ==============================================================
-  // TRIP CARD
-  // ==============================================================
-
-  static pw.Widget _buildTripCard({
-    required TripEntity trip,
-    required pw.Font regularFont,
-    required pw.Font boldFont,
-  }) {
-    final normalNet =
-        trip.revenue - trip.expenses;
-
-    final sahraRevenue =
-        trip.sahraRevenue ?? 0;
-
-    final sahraExpense =
-        trip.sahraExpense ?? 0;
-
-    final hasSahra =
-        trip.sahraDetails != null ||
-            trip.sahraDriverName != null ||
-            sahraRevenue > 0 ||
-            sahraExpense > 0;
-
-    final totalTripRevenue =
-        trip.revenue + sahraRevenue;
-
-    final totalTripExpense =
-        trip.expenses + sahraExpense;
-
-    final totalTripNet =
-        totalTripRevenue - totalTripExpense;
-
+  static pw.Widget _sectionTitle(String title, pw.Font boldFont) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 10),
-      padding: const pw.EdgeInsets.all(10),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.white,
-        borderRadius:
-        pw.BorderRadius.circular(7),
-        border: pw.Border.all(
-          color: PdfColors.grey300,
-        ),
-      ),
-      child: pw.Column(
-        crossAxisAlignment:
-        pw.CrossAxisAlignment.stretch,
-        children: [
-          // --------------------------------------------------------
-          // TRIP HEADER
-          // --------------------------------------------------------
-
-          pw.Row(
-            mainAxisAlignment:
-            pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                _formatDate(trip.createdAt),
-                style: pw.TextStyle(
-                  font: boldFont,
-                  fontSize: 10,
-                ),
-              ),
-              pw.Text(
-                trip.busName,
-                style: pw.TextStyle(
-                  font: boldFont,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-
-          pw.SizedBox(height: 3),
-
-          pw.Text(
-            'اللوحة: ${trip.plateNumber}',
-            style: pw.TextStyle(
-              font: regularFont,
-              fontSize: 8,
-              color: PdfColors.grey700,
-            ),
-          ),
-
-          // --------------------------------------------------------
-          // FACTORY
-          // --------------------------------------------------------
-
-          if (_factoryName(trip).isNotEmpty) ...[
-            pw.SizedBox(height: 6),
-            _infoRow(
-              title: 'المصنع',
-              value: _factoryName(trip),
-              regularFont: regularFont,
-              boldFont: boldFont,
-            ),
-          ],
-
-          pw.SizedBox(height: 8),
-
-          pw.Divider(
-            color: PdfColors.grey300,
-          ),
-
-          // --------------------------------------------------------
-          // TRIP DETAILS
-          // --------------------------------------------------------
-
-          _infoRow(
-            title: 'تفاصيل الرحلة',
-            value: trip.details.isEmpty
-                ? '-'
-                : trip.details,
-            regularFont: regularFont,
-            boldFont: boldFont,
-          ),
-
-          pw.SizedBox(height: 5),
-
-          _infoRow(
-            title: 'إيراد الرحلة',
-            value:
-            '${trip.revenue.toStringAsFixed(0)} ج.م',
-            regularFont: regularFont,
-            boldFont: boldFont,
-          ),
-
-          if (trip.expenses > 0 || (trip.expenseDetails ?? '').isNotEmpty) ...[
-            pw.SizedBox(height: 5),
-            _infoRow(
-              title: 'مصروف السواق في الرحلة',
-              value:
-              '${trip.expenses.toStringAsFixed(0)} ج.م',
-              regularFont: regularFont,
-              boldFont: boldFont,
-            ),
-            if ((trip.expenseDetails ?? '').isNotEmpty) ...[
-              pw.SizedBox(height: 5),
-              _infoRow(
-                title: 'تفاصيل مصروف السواق',
-                value: trip.expenseDetails ?? '',
-                regularFont: regularFont,
-                boldFont: boldFont,
-              ),
-            ],
-          ],
-
-          pw.SizedBox(height: 5),
-
-          _infoRow(
-            title: 'صافي الرحلة',
-            value:
-            '${normalNet.toStringAsFixed(0)} ج.م',
-            regularFont: regularFont,
-            boldFont: boldFont,
-          ),
-
-          // --------------------------------------------------------
-          // SAHRA
-          // --------------------------------------------------------
-
-          if (hasSahra) ...[
-            pw.SizedBox(height: 10),
-
-            pw.Container(
-              padding:
-              const pw.EdgeInsets.all(9),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.green50,
-                borderRadius:
-                pw.BorderRadius.circular(6),
-                border: pw.Border.all(
-                  color: PdfColors.green300,
-                ),
-              ),
-              child: pw.Column(
-                crossAxisAlignment:
-                pw.CrossAxisAlignment.stretch,
-                children: [
-                  pw.Text(
-                    'سهرة (وردية إضافية)',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 11,
-                      color: PdfColors.green900,
-                    ),
-                  ),
-
-                  pw.SizedBox(height: 7),
-
-                  if ((trip.sahraDetails ?? '')
-                      .isNotEmpty)
-                    _infoRow(
-                      title: 'تفاصيل السهرة',
-                      value:
-                      trip.sahraDetails!,
-                      regularFont:
-                      regularFont,
-                      boldFont: boldFont,
-                    ),
-
-                  if ((trip.sahraDriverName ?? '')
-                      .isNotEmpty) ...[
-                    pw.SizedBox(height: 5),
-                    _infoRow(
-                      title: 'سائق السهرة',
-                      value:
-                      trip.sahraDriverName!,
-                      regularFont:
-                      regularFont,
-                      boldFont: boldFont,
-                    ),
-                  ],
-
-                  if (sahraRevenue > 0) ...[
-                    pw.SizedBox(height: 5),
-                    _infoRow(
-                      title: 'إيراد السهرة',
-                      value:
-                      '${sahraRevenue.toStringAsFixed(0)} ج.م',
-                      regularFont:
-                      regularFont,
-                      boldFont: boldFont,
-                    ),
-                  ],
-
-                  if (sahraExpense > 0) ...[
-                    pw.SizedBox(height: 5),
-                    _infoRow(
-                      title: 'مصروف السهرة',
-                      value:
-                      '${sahraExpense.toStringAsFixed(0)} ج.م',
-                      regularFont:
-                      regularFont,
-                      boldFont: boldFont,
-                    ),
-                  ],
-
-                  if ((trip.sahraExpenseDetails ??
-                      '')
-                      .isNotEmpty) ...[
-                    pw.SizedBox(height: 5),
-                    _infoRow(
-                      title:
-                      'تفاصيل مصروف السهرة',
-                      value:
-                      trip.sahraExpenseDetails!,
-                      regularFont:
-                      regularFont,
-                      boldFont: boldFont,
-                    ),
-                  ],
-
-                  pw.SizedBox(height: 5),
-
-                  _infoRow(
-                    title: 'صافي السهرة',
-                    value:
-                    '${(sahraRevenue - sahraExpense).toStringAsFixed(0)} ج.م',
-                    regularFont:
-                    regularFont,
-                    boldFont: boldFont,
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // --------------------------------------------------------
-          // TOTAL TRIP
-          // --------------------------------------------------------
-
-          if (hasSahra) ...[
-            pw.SizedBox(height: 8),
-
-            pw.Container(
-              padding:
-              const pw.EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 6,
-              ),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius:
-                pw.BorderRadius.circular(5),
-              ),
-              child: pw.Row(
-                mainAxisAlignment:
-                pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'إجمالي الرحلة والسهرة',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 8,
-                    ),
-                  ),
-                  pw.Text(
-                    'إيراد: ${totalTripRevenue.toStringAsFixed(0)} - '
-                        'مصروف: ${totalTripExpense.toStringAsFixed(0)} - '
-                        'صافي: ${totalTripNet.toStringAsFixed(0)} ج.م',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 8,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ==============================================================
-  // ADVANCE SECTION HEADER
-  // ==============================================================
-
-  static pw.Widget _advanceSectionHeader(
-    String title,
-    pw.Font boldFont, {
-    required PdfColor color,
-    required String badgeText,
-  }) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(top: 4, bottom: 4),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              font: boldFont,
-              fontSize: 10,
-              color: color,
-            ),
-          ),
-          pw.Text(
-            badgeText,
-            style: pw.TextStyle(
-              font: boldFont,
-              fontSize: 8.5,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==============================================================
-  // ADVANCE SUMMARY
-  // ==============================================================
-
-  static pw.Widget _buildAdvanceSummary({
-    required double activeTotal,
-    required double paidTotal,
-    required pw.Font regularFont,
-    required pw.Font boldFont,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(9),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.grey100,
-        borderRadius:
-        pw.BorderRadius.circular(7),
-        border: pw.Border.all(
-          color: PdfColors.grey300,
-        ),
-      ),
-      child: pw.Row(
-        children: [
-          pw.Expanded(
-            child: _smallSummary(
-              title: 'السلف المستحقة',
-              value:
-              '${activeTotal.toStringAsFixed(0)} ج.م',
-              regularFont: regularFont,
-              boldFont: boldFont,
-            ),
-          ),
-          pw.Expanded(
-            child: _smallSummary(
-              title: 'السلف المسددة',
-              value:
-              '${paidTotal.toStringAsFixed(0)} ج.م',
-              regularFont: regularFont,
-              boldFont: boldFont,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==============================================================
-  // ADVANCE CARD
-  // ==============================================================
-
-  static pw.Widget _buildAdvanceCard({
-    required DriverAdvanceEntity advance,
-    required pw.Font regularFont,
-    required pw.Font boldFont,
-  }) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 7),
-      padding: const pw.EdgeInsets.all(9),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.white,
-        borderRadius:
-        pw.BorderRadius.circular(6),
-        border: pw.Border.all(
-          color: advance.isPaid ? PdfColors.green300 : PdfColors.red300,
-        ),
-      ),
-      child: pw.Column(
-        crossAxisAlignment:
-        pw.CrossAxisAlignment.stretch,
-        children: [
-          pw.Row(
-            mainAxisAlignment:
-            pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'قيمة السلفة: ${advance.amount.toStringAsFixed(0)} ج.م',
-                style: pw.TextStyle(
-                  font: boldFont,
-                  fontSize: 9.5,
-                  color: advance.isPaid ? PdfColors.green900 : PdfColors.red900,
-                ),
-              ),
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: pw.BoxDecoration(
-                  color: advance.isPaid ? PdfColors.green50 : PdfColors.red50,
-                  borderRadius: pw.BorderRadius.circular(4),
-                  border: pw.Border.all(
-                    color: advance.isPaid ? PdfColors.green400 : PdfColors.red400,
-                    width: 0.5,
-                  ),
-                ),
-                child: pw.Text(
-                  advance.isPaid ? 'تم السداد' : 'مستحقة',
-                  style: pw.TextStyle(
-                    font: boldFont,
-                    fontSize: 8,
-                    color: advance.isPaid ? PdfColors.green900 : PdfColors.red900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          pw.SizedBox(height: 5),
-
-          _infoRow(
-            title: 'تاريخ السلفة',
-            value:
-            _formatDate(advance.date),
-            regularFont: regularFont,
-            boldFont: boldFont,
-          ),
-
-          pw.SizedBox(height: 4),
-
-          _infoRow(
-            title: 'سبب السلفة / الملاحظات',
-            value: advance.note.isNotEmpty ? advance.note : 'لا توجد ملاحظات',
-            regularFont: regularFont,
-            boldFont: boldFont,
-          ),
-
-          if (advance.paidAt != null) ...[
-            pw.SizedBox(height: 4),
-            _infoRow(
-              title: 'تاريخ السداد',
-              value:
-              _formatDate(advance.paidAt!),
-              regularFont: regularFont,
-              boldFont: boldFont,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ==============================================================
-  // DOCUMENT STATUS
-  // ==============================================================
-
-  static pw.Widget _documentStatus({
-    required String title,
-    required bool available,
-    required pw.Font regularFont,
-    required pw.Font boldFont,
-  }) {
-    return pw.Column(
-      children: [
-        pw.Text(
-          title,
-          style: pw.TextStyle(
-            font: boldFont,
-            fontSize: 9,
-          ),
-        ),
-        pw.SizedBox(height: 4),
-        pw.Text(
-          available
-              ? 'متوفرة'
-              : 'غير مرفوعة',
-          style: pw.TextStyle(
-            font: regularFont,
-            fontSize: 8,
-            color: available
-                ? PdfColors.green
-                : PdfColors.grey600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ==============================================================
-  // INFO ROW
-  // ==============================================================
-
-  static pw.Widget _infoRow({
-    required String title,
-    required String value,
-    required pw.Font regularFont,
-    required pw.Font boldFont,
-  }) {
-    return pw.Row(
-      crossAxisAlignment:
-      pw.CrossAxisAlignment.start,
-      children: [
-        pw.SizedBox(
-          width: 85,
-          child: pw.Text(
-            '$title:',
-            style: pw.TextStyle(
-              font: boldFont,
-              fontSize: 8,
-            ),
-          ),
-        ),
-        pw.Expanded(
-          child: pw.Text(
-            value,
-            style: pw.TextStyle(
-              font: regularFont,
-              fontSize: 8,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ==============================================================
-  // SECTION TITLE
-  // ==============================================================
-
-  static pw.Widget _sectionTitle(
-      String title,
-      pw.Font boldFont,
-      ) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(
-        bottom: 7,
-      ),
+      margin: const pw.EdgeInsets.only(bottom: 5),
       child: pw.Text(
         title,
         style: pw.TextStyle(
           font: boldFont,
-          fontSize: 13,
+          fontSize: 10.5,
+          color: PdfColors.grey800,
         ),
       ),
     );
   }
-
-  // ==============================================================
-  // SMALL SUMMARY
-  // ==============================================================
 
   static pw.Widget _smallSummary({
     required String title,
@@ -1240,40 +429,24 @@ class DriverMonthlyReportService {
           title,
           style: pw.TextStyle(
             font: regularFont,
-            fontSize: 8,
+            fontSize: 7.5,
             color: PdfColors.grey600,
           ),
         ),
-        pw.SizedBox(height: 3),
+        pw.SizedBox(height: 2),
         pw.Text(
           value,
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             font: boldFont,
-            fontSize: 10,
+            fontSize: 9,
           ),
         ),
       ],
     );
   }
 
-  // ==============================================================
-  // FACTORY NAME
-  // ==============================================================
-
-  static String _factoryName(
-      TripEntity trip,
-      ) {
-    return trip.factoryName ?? '';
-  }
-
-  // ==============================================================
-  // DATE
-  // ==============================================================
-
-  static String _formatDate(
-      DateTime date,
-      ) {
+  static String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 

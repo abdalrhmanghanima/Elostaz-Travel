@@ -8,14 +8,21 @@ import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_info_card.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_monthly_report_service.dart';
-import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_actions_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
-import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BusTripsScreen extends ConsumerWidget {
+enum TripFilterType {
+  all(title: 'الكل'),
+  trips(title: 'الرحلات'),
+  nightOutings(title: 'السهرات');
+
+  final String title;
+  const TripFilterType({required this.title});
+}
+
+class BusTripsScreen extends ConsumerStatefulWidget {
   const BusTripsScreen({
     super.key,
     required this.bus,
@@ -24,9 +31,16 @@ class BusTripsScreen extends ConsumerWidget {
   final BusEntity bus;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BusTripsScreen> createState() => _BusTripsScreenState();
+}
+
+class _BusTripsScreenState extends ConsumerState<BusTripsScreen> {
+  TripFilterType selectedFilter = TripFilterType.all;
+
+  @override
+  Widget build(BuildContext context) {
     final tripsState = ref.watch(
-      busTripsProvider(bus.id!),
+      busTripsProvider(widget.bus.id!),
     );
 
     return Scaffold(
@@ -35,7 +49,7 @@ class BusTripsScreen extends ConsumerWidget {
         showToolBar: true,
         bgColor: AppColors.primary,
         centerTitle: true,
-        title: 'كل الرحلات',
+        title: 'العمليات والرحلات',
         fontColor: AppColors.white,
         fontSize: 22.sp,
         iconPath: AppIcons.arrowLeft,
@@ -46,10 +60,9 @@ class BusTripsScreen extends ConsumerWidget {
           IconButton(
             onPressed: () {
               tripsState.whenData(
-                    (trips) {
-                  BusMonthlyReportService
-                      .shareCurrentMonthReport(
-                    bus: bus,
+                (trips) {
+                  BusMonthlyReportService.shareCurrentMonthReport(
+                    bus: widget.bus,
                     trips: trips,
                   );
                 },
@@ -67,7 +80,8 @@ class BusTripsScreen extends ConsumerWidget {
         color: AppColors.primary,
         backgroundColor: AppColors.white,
         onRefresh: () async {
-          await ref.refresh(busTripsProvider(bus.id!).future);
+          ref.invalidate(busTripsProvider(widget.bus.id!));
+          await ref.read(busTripsProvider(widget.bus.id!).future);
         },
         child: tripsState.when(
           loading: () => const Center(
@@ -79,7 +93,7 @@ class BusTripsScreen extends ConsumerWidget {
               SizedBox(height: 150.h),
               Center(
                 child: CustomText(
-                  title: 'حدث خطأ في تحميل الرحلات',
+                  title: 'حدث خطأ في تحميل العمليات',
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                 ),
@@ -87,90 +101,148 @@ class BusTripsScreen extends ConsumerWidget {
             ],
           ),
           data: (trips) {
-            if (trips.isEmpty) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  BusInfoCard(bus: bus),
-                  SizedBox(height: 100.h),
-                  Center(
-                    child: CustomText(
-                      title: 'لا توجد رحلات لهذا الأتوبيس',
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              );
-            }
+            final tripsCount = trips.where((t) => t.isTrip).length;
+            final nightOutingsCount = trips.where((t) => t.isNightOuting).length;
+
+            final filteredTrips = trips.where((t) {
+              if (selectedFilter == TripFilterType.trips) {
+                return t.isTrip;
+              } else if (selectedFilter == TripFilterType.nightOutings) {
+                return t.isNightOuting;
+              }
+              return true;
+            }).toList();
 
             return Column(
               children: [
-                BusInfoCard(bus: bus),
+                BusInfoCard(bus: widget.bus),
+
+                // Filter Tabs: الكل | الرحلات | السهرات
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
+                      children: [
+                        _buildFilterTab(
+                          type: TripFilterType.all,
+                          label: 'الكل (${trips.length})',
+                          isSelected: selectedFilter == TripFilterType.all,
+                        ),
+                        SizedBox(width: 4.w),
+                        _buildFilterTab(
+                          type: TripFilterType.trips,
+                          label: 'الرحلات ($tripsCount)',
+                          isSelected: selectedFilter == TripFilterType.trips,
+                        ),
+                        SizedBox(width: 4.w),
+                        _buildFilterTab(
+                          type: TripFilterType.nightOutings,
+                          label: 'السهرات ($nightOutingsCount)',
+                          isSelected: selectedFilter == TripFilterType.nightOutings,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 Expanded(
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      16.w,
-                      4.h,
-                      16.w,
-                      16.h,
-                    ),
-                    itemCount: trips.length,
-                    itemBuilder: (context, index) {
-                      final trip = trips[index];
-
-                      return InkWell(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          backgroundColor: AppColors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(24.r),
+                  child: filteredTrips.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(height: 80.h),
+                            Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.directions_bus_outlined,
+                                    size: 48.sp,
+                                    color: const Color(0xFFD1D5DB),
+                                  ),
+                                  SizedBox(height: 10.h),
+                                  CustomText(
+                                    title: selectedFilter == TripFilterType.nightOutings
+                                        ? 'لا توجد سهرات مسجلة لهذا الأتوبيس'
+                                        : selectedFilter == TripFilterType.trips
+                                            ? 'لا توجد رحلات مسجلة لهذا الأتوبيس'
+                                            : 'لا توجد عمليات لهذا الأتوبيس',
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w600,
+                                    fontColor: const Color(0xFF777B85),
+                                  ),
+                                ],
+                              ),
                             ),
+                          ],
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(
+                            16.w,
+                            4.h,
+                            16.w,
+                            16.h,
                           ),
-                          builder: (_) {
-                            return TripActionsBottomSheet(
-                              onDelete: () async {
-                                Navigator.pop(context);
-
-                                final success = await ref
-                                    .read(tripProvider.notifier)
-                                    .deleteTrip(trip.id);
-
-                                if (success) {
-                                  ref.invalidate(
-                                    busTripsProvider(bus.id!),
-                                  );
-
-                                  ref.invalidate(
-                                    driverTripsProvider(trip.driverId),
-                                  );
-
-                                  ref.invalidate(
-                                    driversProvider,
-                                  );
-                                }
-                              },
+                          itemCount: filteredTrips.length,
+                          itemBuilder: (context, index) {
+                            final trip = filteredTrips[index];
+                            return TripCard(
+                              trip: trip,
+                              busId: widget.bus.id!,
                             );
                           },
-                        );
-                      },
-                      child: TripCard(
-                        trip: trip,
-                        busId: bus.id!,
-                      ),
-                    );
-                  },
+                        ),
                 ),
-              ),
-            ],
-          );
-        },
-      )
-      )
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
-}
+
+  Widget _buildFilterTab({
+    required TripFilterType type,
+    required String label,
+    required bool isSelected,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            selectedFilter = type;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(9.r),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: CustomText(
+            title: label,
+            fontSize: 12.sp,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontColor: isSelected ? AppColors.primary : const Color(0xFF6B7280),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}

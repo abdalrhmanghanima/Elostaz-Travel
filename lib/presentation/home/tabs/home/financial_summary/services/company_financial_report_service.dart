@@ -25,15 +25,18 @@ class CompanyFinancialReportService {
       bold: boldFont,
     );
 
+    final tripsCount = summary.allTrips.where((t) => t.isTrip).length;
+    final nightOutingsCount = summary.allTrips.where((t) => t.isNightOuting).length;
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         theme: theme,
         textDirection: pw.TextDirection.rtl,
-        margin: const pw.EdgeInsets.all(20),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         footer: (context) {
           return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 8),
+            margin: const pw.EdgeInsets.only(top: 6),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -46,7 +49,7 @@ class CompanyFinancialReportService {
                   ),
                 ),
                 pw.Text(
-                  'الملخص المالي الشامل - Elostaz Travel',
+                  'الملخص المالي الشامل — شركة الأستاذ للنقل السياحي',
                   style: pw.TextStyle(
                     font: regularFont,
                     fontSize: 8,
@@ -70,14 +73,14 @@ class CompanyFinancialReportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'الملخص المالي للشركة',
+                      'الملخص المالي العام للشركة',
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 20,
+                        fontSize: 17,
                         color: PdfColors.blue900,
                       ),
                     ),
-                    pw.SizedBox(height: 3),
+                    pw.SizedBox(height: 2),
                     pw.Text(
                       'الفترة: ${summary.periodLabel}',
                       style: pw.TextStyle(
@@ -92,14 +95,14 @@ class CompanyFinancialReportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
-                      'Elostaz Travel',
+                      'شركة الأستاذ للنقل السياحي',
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 15,
+                        fontSize: 14,
                         color: PdfColors.blue900,
                       ),
                     ),
-                    pw.SizedBox(height: 3),
+                    pw.SizedBox(height: 2),
                     pw.Text(
                       'تاريخ التقرير: ${_formatDate(now)}',
                       style: pw.TextStyle(
@@ -114,23 +117,23 @@ class CompanyFinancialReportService {
             ),
           );
 
-          widgets.add(pw.SizedBox(height: 12));
+          widgets.add(pw.SizedBox(height: 10));
 
           // ── 2. Top Summary KPI Card ─────────────────────────────────────
           widgets.add(
             pw.Container(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: pw.BoxDecoration(
                 color: PdfColors.grey100,
                 borderRadius: pw.BorderRadius.circular(6),
-                border: pw.Border.all(color: PdfColors.grey300),
+                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
               ),
               child: pw.Row(
                 children: [
                   pw.Expanded(
                     child: _kpiItem(
-                      title: 'إجمالي الرحلات',
-                      value: '${summary.totalTrips}',
+                      title: 'إجمالي العمليات',
+                      value: '${summary.totalTrips} ($tripsCount رحلة + $nightOutingsCount سهرة)',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
@@ -153,7 +156,7 @@ class CompanyFinancialReportService {
                   ),
                   pw.Expanded(
                     child: _kpiItem(
-                      title: 'صافي الإيرادات',
+                      title: 'صافي الأرباح',
                       value: '${_formatCurrency(summary.totalNetRevenue)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
@@ -167,7 +170,7 @@ class CompanyFinancialReportService {
             ),
           );
 
-          widgets.add(pw.SizedBox(height: 14));
+          widgets.add(pw.SizedBox(height: 10));
 
           // ── 3. Empty State or Grouped Bus Details ───────────────────────
           if (summary.busGroups.isEmpty) {
@@ -181,10 +184,10 @@ class CompanyFinancialReportService {
                 ),
                 child: pw.Center(
                   child: pw.Text(
-                    'لا توجد رحلات في هذه الفترة',
+                    'لا توجد رحلات أو سهرات مسجلة في هذه الفترة',
                     style: pw.TextStyle(
                       font: regularFont,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                 ),
@@ -195,7 +198,7 @@ class CompanyFinancialReportService {
               // Bus section header
               widgets.add(
                 pw.Container(
-                  margin: const pw.EdgeInsets.only(top: 8, bottom: 4),
+                  margin: const pw.EdgeInsets.only(top: 6, bottom: 4),
                   padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: const pw.BoxDecoration(
                     color: PdfColors.blueGrey50,
@@ -208,7 +211,7 @@ class CompanyFinancialReportService {
                         'الأتوبيس: ${group.busName}',
                         style: pw.TextStyle(
                           font: boldFont,
-                          fontSize: 10,
+                          fontSize: 9.5,
                           color: PdfColors.blue900,
                         ),
                       ),
@@ -216,7 +219,7 @@ class CompanyFinancialReportService {
                         'لوحة: ${group.plateNumber}',
                         style: pw.TextStyle(
                           font: regularFont,
-                          fontSize: 9,
+                          fontSize: 8.5,
                           color: PdfColors.grey800,
                         ),
                       ),
@@ -229,19 +232,41 @@ class CompanyFinancialReportService {
               widgets.add(
                 pw.TableHelper.fromTextArray(
                   headers: [
+                    'النوع',
                     'التاريخ',
                     'السائق',
-                    'التفاصيل',
+                    'المصنع / الجهة',
+                    'التفاصيل وملاحظات المصروف',
                     'الإيراد',
-                    'المصروفات',
+                    'المصروف',
                     'الصافي',
                   ],
                   data: group.trips.map((trip) {
                     final net = trip.revenue - trip.expenses;
+                    final factoryLabel = (trip.factoryName != null && trip.factoryName!.trim().isNotEmpty)
+                        ? trip.factoryName!
+                        : '-';
+
+                    String details = trip.details.trim();
+                    if (trip.expenseDetails != null && trip.expenseDetails!.trim().isNotEmpty) {
+                      if (details.isNotEmpty) {
+                        details += '\n[مصروف: ${trip.expenseDetails!.trim()}]';
+                      } else {
+                        details = '[مصروف: ${trip.expenseDetails!.trim()}]';
+                      }
+                    }
+                    if (details.isEmpty) details = '-';
+
+                    final dateStr = trip.effectiveDate.year > 1970
+                        ? _formatDate(trip.effectiveDate)
+                        : 'غير محدد';
+
                     return [
-                      _formatDate(trip.createdAt),
-                      trip.driverName,
-                      trip.details.isEmpty ? '-' : trip.details,
+                      trip.typeLabel,
+                      dateStr,
+                      trip.driverName.isNotEmpty ? trip.driverName : '-',
+                      factoryLabel,
+                      details,
                       '${_formatCurrency(trip.revenue)} ج.م',
                       '${_formatCurrency(trip.expenses)} ج.م',
                       '${_formatCurrency(net)} ج.م',
@@ -263,18 +288,20 @@ class CompanyFinancialReportService {
                     width: 0.5,
                   ),
                   cellPadding: const pw.EdgeInsets.symmetric(
-                    horizontal: 4,
+                    horizontal: 3,
                     vertical: 3,
                   ),
                   cellAlignment: pw.Alignment.center,
                   headerAlignment: pw.Alignment.center,
                   columnWidths: {
-                    0: const pw.FixedColumnWidth(55),
-                    1: const pw.FixedColumnWidth(80),
-                    2: const pw.FlexColumnWidth(2.2),
-                    3: const pw.FixedColumnWidth(55),
-                    4: const pw.FixedColumnWidth(55),
-                    5: const pw.FixedColumnWidth(55),
+                    0: const pw.FixedColumnWidth(40),
+                    1: const pw.FixedColumnWidth(50),
+                    2: const pw.FixedColumnWidth(60),
+                    3: const pw.FixedColumnWidth(60),
+                    4: const pw.FlexColumnWidth(2.5),
+                    5: const pw.FixedColumnWidth(45),
+                    6: const pw.FixedColumnWidth(45),
+                    7: const pw.FixedColumnWidth(45),
                   },
                 ),
               );
@@ -282,7 +309,7 @@ class CompanyFinancialReportService {
               // Bus Subtotal
               widgets.add(
                 pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 8),
+                  margin: const pw.EdgeInsets.only(bottom: 6),
                   padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: pw.BoxDecoration(
                     color: PdfColors.grey50,
@@ -292,7 +319,7 @@ class CompanyFinancialReportService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        'إجمالي الأتوبيس (${group.trips.length} رحلة):',
+                        'إجمالي الأتوبيس (${group.trips.length} عملية):',
                         style: pw.TextStyle(font: boldFont, fontSize: 8),
                       ),
                       pw.Text(
@@ -324,32 +351,32 @@ class CompanyFinancialReportService {
             // ── 4. Grand Final Total ───────────────────────────────────────
             widgets.add(
               pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: pw.BoxDecoration(
                   color: PdfColors.blueGrey100,
                   borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blueGrey300),
+                  border: pw.Border.all(color: PdfColors.blueGrey300, width: 0.5),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
-                      'إجمالي الشركة (${summary.totalTrips} رحلة):',
-                      style: pw.TextStyle(font: boldFont, fontSize: 9.5),
+                      'إجمالي الشركة (${summary.totalTrips} عملية):',
+                      style: pw.TextStyle(font: boldFont, fontSize: 9),
                     ),
                     pw.Text(
                       'الإيرادات: ${_formatCurrency(summary.totalRevenue)} ج.م',
-                      style: pw.TextStyle(font: boldFont, fontSize: 9),
+                      style: pw.TextStyle(font: boldFont, fontSize: 8.5),
                     ),
                     pw.Text(
                       'المصروفات: ${_formatCurrency(summary.totalExpenses)} ج.م',
-                      style: pw.TextStyle(font: boldFont, fontSize: 9),
+                      style: pw.TextStyle(font: boldFont, fontSize: 8.5),
                     ),
                     pw.Text(
-                      'صافي الشركة: ${_formatCurrency(summary.totalNetRevenue)} ج.م',
+                      'صافي الأرباح: ${_formatCurrency(summary.totalNetRevenue)} ج.م',
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 10.5,
+                        fontSize: 9.5,
                         color: summary.totalNetRevenue >= 0
                             ? PdfColors.green900
                             : PdfColors.red900,
@@ -390,13 +417,13 @@ class CompanyFinancialReportService {
             color: PdfColors.grey600,
           ),
         ),
-        pw.SizedBox(height: 3),
+        pw.SizedBox(height: 2),
         pw.Text(
           value,
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             font: boldFont,
-            fontSize: 9.5,
+            fontSize: 9,
             color: valueColor ?? PdfColors.black,
           ),
         ),
@@ -415,3 +442,4 @@ class CompanyFinancialReportService {
         );
   }
 }
+

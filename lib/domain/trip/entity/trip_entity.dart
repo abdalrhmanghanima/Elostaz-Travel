@@ -24,6 +24,11 @@ class TripExpenseItem {
   }
 }
 
+class TripType {
+  static const String trip = 'trip';
+  static const String nightOuting = 'night_outing';
+}
+
 class TripEntity {
   final String id;
   final String driverId;
@@ -33,16 +38,18 @@ class TripEntity {
   final String plateNumber;
   final String details;
   final double revenue;
-  final DateTime createdAt;
   final double expenses;
+  final String? expenseDetails;
   final String? factoryId;
   final String? factoryName;
   final String? departureTime;
+  final String type; // 'trip' or 'night_outing'
+  final DateTime createdAt;
+  final DateTime? tripDate; // Optional user-selected operational date
+
+  // Legacy fields for backward compatibility
   final bool isNightShift;
   final List<TripExpenseItem> expenseItems;
-  final String? expenseDetails;
-
-  // Dedicated optional Night Shift ("سهرة") fields
   final String? sahraDetails;
   final String? sahraDriverId;
   final String? sahraDriverName;
@@ -57,14 +64,16 @@ class TripEntity {
     required this.busId,
     required this.busName,
     required this.plateNumber,
-    required this.details,
-    required this.revenue,
-    required this.createdAt,
-    required this.expenses,
+    this.details = '',
+    this.revenue = 0.0,
+    this.expenses = 0.0,
     this.expenseDetails,
     this.factoryId,
     this.factoryName,
     this.departureTime,
+    this.type = TripType.trip,
+    required this.createdAt,
+    this.tripDate,
     this.isNightShift = false,
     this.expenseItems = const [],
     this.sahraDetails,
@@ -75,10 +84,30 @@ class TripEntity {
     this.sahraExpenseDetails,
   });
 
-  bool get hasSahra =>
+  /// Primary source of truth for record classification
+  bool get isNightOuting =>
+      type == TripType.nightOuting ||
+      type == 'sahra' ||
       isNightShift ||
+      hasLegacySahra;
+
+  bool get isTrip => !isNightOuting;
+
+  String get typeLabel => isNightOuting ? 'سهرة' : 'رحلة';
+
+  double get netRevenue => revenue - expenses;
+
+  /// Returns the effective date (user-entered tripDate if available, else createdAt).
+  DateTime get effectiveDate => tripDate ?? createdAt;
+
+  /// Whether a specific trip date was explicitly chosen by the user.
+  bool get hasExplicitDate => tripDate != null;
+
+  bool get hasLegacySahra =>
       (sahraDetails != null && sahraDetails!.trim().isNotEmpty) ||
       (sahraDriverName != null && sahraDriverName!.trim().isNotEmpty) ||
       (sahraRevenue != null && sahraRevenue! > 0) ||
       (sahraExpense != null && sahraExpense! > 0);
+
+  bool get hasSahra => isNightOuting || hasLegacySahra;
 }

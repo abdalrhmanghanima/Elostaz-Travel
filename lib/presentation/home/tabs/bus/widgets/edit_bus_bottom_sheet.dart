@@ -219,7 +219,9 @@ class _EditBusBottomSheetState
 
     final image = await imagePicker.pickImage(
       source: source,
-      imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
     );
 
     if (image == null) return;
@@ -284,7 +286,9 @@ class _EditBusBottomSheetState
 
     final image = await imagePicker.pickImage(
       source: source,
-      imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
     );
 
     if (image == null) return;

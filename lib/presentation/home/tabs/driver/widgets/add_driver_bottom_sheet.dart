@@ -42,6 +42,8 @@ class _AddDriverBottomSheetState extends State<AddDriverBottomSheet> {
     try {
       final picked = await _picker.pickImage(
         source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
         imageQuality: 85,
       );
 

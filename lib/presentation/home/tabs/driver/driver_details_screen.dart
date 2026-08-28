@@ -21,13 +21,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-class DriverDetailsScreen extends ConsumerWidget {
+class DriverDetailsScreen extends ConsumerStatefulWidget {
   final DriverEntity driver;
 
   const DriverDetailsScreen({
     super.key,
     required this.driver,
   });
+
+  @override
+  ConsumerState<DriverDetailsScreen> createState() => _DriverDetailsScreenState();
+}
+
+class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
+  int _selectedFilterIndex = 0; // 0: الكل, 1: الرحلات, 2: السهرات
 
   Future<void> _pickAndSaveImage({
     required BuildContext context,
@@ -82,17 +89,19 @@ class DriverDetailsScreen extends ConsumerWidget {
     try {
       final picked = await picker.pickImage(
         source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
         imageQuality: 85,
       );
 
       if (picked != null) {
         final file = File(picked.path);
         if (isIdCard) {
-          await DriverLocalImageService.instance.saveIdCardImage(driver.id, file);
+          await DriverLocalImageService.instance.saveIdCardImage(widget.driver.id, file);
         } else {
-          await DriverLocalImageService.instance.saveLicenseImage(driver.id, file);
+          await DriverLocalImageService.instance.saveLicenseImage(widget.driver.id, file);
         }
-        ref.invalidate(driverLocalImagesProvider(driver.id));
+        ref.invalidate(driverLocalImagesProvider(widget.driver.id));
       }
     } catch (e) {
       debugPrint('Error picking driver image: $e');
@@ -100,11 +109,11 @@ class DriverDetailsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final drivers = ref.watch(driversProvider).valueOrNull;
-    DriverEntity currentDriver = driver;
+    DriverEntity currentDriver = widget.driver;
     if (drivers != null) {
-      final index = drivers.indexWhere((d) => d.id == driver.id);
+      final index = drivers.indexWhere((d) => d.id == widget.driver.id);
       if (index != -1) {
         currentDriver = drivers[index];
       }
@@ -189,7 +198,7 @@ class DriverDetailsScreen extends ConsumerWidget {
               SizedBox(height: 150.h),
               Center(
                 child: CustomText(
-                  title: 'حدث خطأ في تحميل الرحلات',
+                  title: 'حدث خطأ في تحميل العمليات',
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
                 ),
@@ -197,31 +206,50 @@ class DriverDetailsScreen extends ConsumerWidget {
             ],
           ),
           data: (trips) {
+            int tripsCount = 0;
+            int nightOutingsCount = 0;
+            double totalRev = 0;
+
+            for (final t in trips) {
+              totalRev += t.revenue;
+              if (t.isNightOuting) {
+                nightOutingsCount++;
+              } else {
+                tripsCount++;
+              }
+            }
+
+            final filteredTrips = trips.where((t) {
+              if (_selectedFilterIndex == 1) return t.isTrip;
+              if (_selectedFilterIndex == 2) return t.isNightOuting;
+              return true;
+            }).toList();
+
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(
-                top: 24.h,
-                right: 20.w,
-                left: 20.w,
-                bottom: 40.h,
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+                vertical: 18.h,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ─── Driver Info Card ───────────────────────────────────
+                  // ─── Driver Profile Card ────────────────────────────────
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
                       horizontal: 18.w,
-                      vertical: 18.h,
+                      vertical: 20.h,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      borderRadius: BorderRadius.circular(18.r),
-                      border: Border.all(color: const Color(0xFFE7E8EC)),
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: const Color(0xFFE7E8EC),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
+                          color: Colors.black.withValues(alpha: .04),
                           blurRadius: 12,
                           offset: const Offset(0, 3),
                         ),
@@ -230,19 +258,19 @@ class DriverDetailsScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         Container(
-                          width: 82.w,
-                          height: 82.w,
+                          width: 76.w,
+                          height: 76.w,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF0F2F6),
+                            color: const Color(0xFFF0F4FF),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFE3E6EC),
+                              color: const Color(0xFFD0DCFF),
                               width: 3.w,
                             ),
                           ),
                           child: Icon(
                             Icons.person_rounded,
-                            size: 43.sp,
+                            size: 44.sp,
                             color: AppColors.primary,
                           ),
                         ),
@@ -279,22 +307,28 @@ class DriverDetailsScreen extends ConsumerWidget {
                           SizedBox(height: 6.h),
                         ],
 
-                        SizedBox(height: 12.h),
+                        SizedBox(height: 16.h),
 
                         Row(
                           children: [
                             Expanded(
                               child: _DriverStatItem(
-                                title: 'إجمالي الإيرادات',
-                                value:
-                                    '${currentDriver.totalRevenue.toStringAsFixed(0)} ج.م',
+                                title: 'الرحلات',
+                                value: '$tripsCount',
                               ),
                             ),
-                            SizedBox(width: 12.w),
+                            SizedBox(width: 8.w),
                             Expanded(
                               child: _DriverStatItem(
-                                title: 'الرحلات المكتملة',
-                                value: '${currentDriver.tripsCount}',
+                                title: 'السهرات',
+                                value: '$nightOutingsCount',
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: _DriverStatItem(
+                                title: 'إجمالي الإيرادات',
+                                value: '${totalRev.toStringAsFixed(0)} ج.م',
                               ),
                             ),
                           ],
@@ -303,7 +337,7 @@ class DriverDetailsScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  SizedBox(height: 28.h),
+                  SizedBox(height: 24.h),
 
                   // ─── Driver Documents ───────────────────────────────────
                   _SectionHeader(title: 'وثائق السواق'),
@@ -346,7 +380,7 @@ class DriverDetailsScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  SizedBox(height: 28.h),
+                  SizedBox(height: 24.h),
 
                   // ─── Driver Advances ────────────────────────────────────
                   Row(
@@ -440,7 +474,6 @@ class DriverDetailsScreen extends ConsumerWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          // Total banner
                           Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 14.w,
@@ -457,8 +490,7 @@ class DriverDetailsScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 CustomText(
-                                  title:
-                                      '${totalActive.toStringAsFixed(0)} ج.م',
+                                  title: '${totalActive.toStringAsFixed(0)} ج.م',
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w800,
                                   fontColor: const Color(0xFFF57C00),
@@ -473,15 +505,12 @@ class DriverDetailsScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-
                           SizedBox(height: 12.h),
-
                           ListView.separated(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: active.length,
-                            separatorBuilder: (_, _) =>
-                                SizedBox(height: 10.h),
+                            separatorBuilder: (_, _) => SizedBox(height: 10.h),
                             itemBuilder: (context, index) {
                               final advance = active[index];
                               return _AdvanceCard(
@@ -495,20 +524,53 @@ class DriverDetailsScreen extends ConsumerWidget {
                     },
                   ),
 
-                  SizedBox(height: 28.h),
+                  SizedBox(height: 24.h),
 
                   // ─── Trips Section ──────────────────────────────────────
-                  _SectionHeader(title: 'رحلات السواق'),
+                  _SectionHeader(title: 'عمليات ورحلات السواق'),
 
                   SizedBox(height: 12.h),
 
-                  if (trips.isEmpty)
+                  // Filter Tabs
+                  Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
+                      children: [
+                        _buildFilterButton(
+                          index: 0,
+                          label: 'الكل (${trips.length})',
+                        ),
+                        SizedBox(width: 4.w),
+                        _buildFilterButton(
+                          index: 1,
+                          label: 'الرحلات ($tripsCount)',
+                        ),
+                        SizedBox(width: 4.w),
+                        _buildFilterButton(
+                          index: 2,
+                          label: 'السهرات ($nightOutingsCount)',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 14.h),
+
+                  if (filteredTrips.isEmpty)
                     Padding(
-                      padding: EdgeInsets.only(top: 40.h),
+                      padding: EdgeInsets.only(top: 30.h),
                       child: Center(
                         child: CustomText(
-                          title: 'لا توجد رحلات لهذا السواق',
-                          fontSize: 16.sp,
+                          title: _selectedFilterIndex == 2
+                              ? 'لا توجد سهرات مسجلة لهذا السواق'
+                              : _selectedFilterIndex == 1
+                                  ? 'لا توجد رحلات مسجلة لهذا السواق'
+                                  : 'لا توجد عمليات لهذا السواق',
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.w600,
                           fontColor: const Color(0xFF777B85),
                         ),
@@ -518,10 +580,13 @@ class DriverDetailsScreen extends ConsumerWidget {
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: trips.length,
+                      itemCount: filteredTrips.length,
                       separatorBuilder: (_, _) => SizedBox(height: 12.h),
                       itemBuilder: (context, index) {
-                        return TripCard(trip: trips[index]);
+                        return TripCard(
+                          trip: filteredTrips[index],
+                          showBus: true,
+                        );
                       },
                     ),
                 ],
@@ -532,7 +597,49 @@ class DriverDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildFilterButton({
+    required int index,
+    required String label,
+  }) {
+    final isSelected = _selectedFilterIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedFilterIndex = index;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(9.r),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: CustomText(
+              title: label,
+              fontSize: 12.sp,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontColor: isSelected ? AppColors.primary : const Color(0xFF6B7280),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section Header

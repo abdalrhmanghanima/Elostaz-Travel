@@ -113,7 +113,8 @@ class FinancialSummaryScreen extends ConsumerWidget {
               onRefresh: () async {
                 ref.invalidate(monthlyTripsProvider);
                 ref.invalidate(allTripsProvider);
-                await ref.refresh(companyFinancialSummaryProvider.future);
+                ref.invalidate(companyFinancialSummaryProvider);
+                await ref.read(companyFinancialSummaryProvider.future);
               },
               child: summaryAsync.when(
                 loading: () => const Center(

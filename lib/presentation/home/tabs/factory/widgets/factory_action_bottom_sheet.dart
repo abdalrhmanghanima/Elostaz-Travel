@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 enum FactoryActionType {
   addTrip,
+  addNightOuting,
   editFactory,
   printReport,
   deleteFactory,
@@ -53,7 +54,7 @@ class FactoryActionsBottomSheet extends StatelessWidget {
                   const Spacer(),
 
                   CustomText(
-                    title: "إضافة رحلة / وردية",
+                    title: "إضافة رحلة",
                     fontSize: 17.sp,
                     fontWeight: FontWeight.w600,
                   ),
@@ -68,9 +69,54 @@ class FactoryActionsBottomSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Icon(
-                      Icons.add_rounded,
+                      Icons.directions_bus_rounded,
                       color: AppColors.primary,
-                      size: 25.sp,
+                      size: 23.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Divider(height: 20.h),
+
+            // =====================================================
+            // ADD NIGHT OUTING (سهرة)
+            // =====================================================
+            InkWell(
+              onTap: () {
+                Navigator.pop(context, FactoryActionType.addNightOuting);
+              },
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 20.sp,
+                    color: Colors.grey,
+                  ),
+
+                  const Spacer(),
+
+                  CustomText(
+                    title: "إضافة سهرة",
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w600,
+                    fontColor: AppColors.green,
+                  ),
+
+                  SizedBox(width: 16.w),
+
+                  Container(
+                    width: 45.w,
+                    height: 45.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.green.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      Icons.nightlight_round,
+                      color: AppColors.green,
+                      size: 23.sp,
                     ),
                   ),
                 ],
@@ -122,7 +168,6 @@ class FactoryActionsBottomSheet extends StatelessWidget {
             ),
 
             Divider(height: 20.h),
-
 
             // =====================================================
             // DELETE FACTORY

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:elostaz_travel/core/dimens/dimens.dart';
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/navigator/navigator.dart';
@@ -312,33 +311,41 @@ class BusDetailsScreen extends ConsumerWidget {
                     // =========================
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16.r),
-                      child: localBusImage != null
-                          ? Image.file(
-                        localBusImage,
-                        width: 125.w,
-                        height: 115.h,
-                        fit: BoxFit.cover,
-                      )
-                          : currentBus.busImageUrl != null &&
-                          currentBus.busImageUrl!.isNotEmpty
-                          ? Image.network(
-                        currentBus.busImageUrl!,
-                        width: 125.w,
-                        height: 115.h,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) {
-                          return CustomAssetImage(
-                            assetName: AppAssets.defaultBus,
-                            width: 125.w,
-                            height: 115.h,
-                          );
-                        },
-                      )
-                          : CustomAssetImage(
-                        assetName: AppAssets.defaultBus,
-                        width: 125.w,
-                        height: 115.h,
-                      ),
+                      child: localImagesAsync.isLoading
+                          ? SizedBox(
+                              width: 125.w,
+                              height: 115.h,
+                              child: const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : localBusImage != null
+                              ? Image.file(
+                                  localBusImage,
+                                  width: 125.w,
+                                  height: 115.h,
+                                  fit: BoxFit.cover,
+                                )
+                              : currentBus.busImageUrl != null &&
+                                      currentBus.busImageUrl!.isNotEmpty
+                                  ? Image.network(
+                                      currentBus.busImageUrl!,
+                                      width: 125.w,
+                                      height: 115.h,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) {
+                                        return CustomAssetImage(
+                                          assetName: AppAssets.defaultBus,
+                                          width: 125.w,
+                                          height: 115.h,
+                                        );
+                                      },
+                                    )
+                                  : CustomAssetImage(
+                                      assetName: AppAssets.defaultBus,
+                                      width: 125.w,
+                                      height: 115.h,
+                                    ),
                     ),
                   ],
                 ),
@@ -701,7 +708,7 @@ class BusDetailsScreen extends ConsumerWidget {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: CustomText(
-                                  title: "البنك المحظور لصالحه",
+                                  title: "البنك",
                                   fontSize: 16.sp,
                                 ),
                               ),
@@ -815,31 +822,39 @@ class BusDetailsScreen extends ConsumerWidget {
                               },
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16.r),
-                                child: localLicenseImage != null
-                                    ? Image.file(
-                                        localLicenseImage,
+                                child: localImagesAsync.isLoading
+                                    ? SizedBox(
                                         width: 80.w,
                                         height: 64.h,
-                                        fit: BoxFit.cover,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
                                       )
-                                    : currentBus.licenseImageUrl != null &&
-                                            currentBus.licenseImageUrl!.isNotEmpty
-                                        ? Image.network(
-                                            currentBus.licenseImageUrl!,
+                                    : localLicenseImage != null
+                                        ? Image.file(
+                                            localLicenseImage,
                                             width: 80.w,
                                             height: 64.h,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => CustomAssetImage(
-                                              assetName: AppAssets.plate,
-                                              width: 80.w,
-                                              height: 64.h,
-                                            ),
                                           )
-                                        : CustomAssetImage(
-                                            assetName: AppAssets.plate,
-                                            width: 80.w,
-                                            height: 64.h,
-                                          ),
+                                        : currentBus.licenseImageUrl != null &&
+                                                currentBus.licenseImageUrl!.isNotEmpty
+                                            ? Image.network(
+                                                currentBus.licenseImageUrl!,
+                                                width: 80.w,
+                                                height: 64.h,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => CustomAssetImage(
+                                                  assetName: AppAssets.plate,
+                                                  width: 80.w,
+                                                  height: 64.h,
+                                                ),
+                                              )
+                                            : CustomAssetImage(
+                                                assetName: AppAssets.plate,
+                                                width: 80.w,
+                                                height: 64.h,
+                                              ),
                               ),
                             ),
                             Column(
