@@ -12,7 +12,7 @@ import 'package:elostaz_travel/presentation/home/tabs/factory/add_factory_screen
 import 'package:elostaz_travel/presentation/home/tabs/factory/provider/factory_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/add_factory_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/factory_action_bottom_sheet.dart';
-import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/factory_monthly_report_service.dart';
+import 'package:elostaz_travel/presentation/home/tabs/all_trips/all_trips_page.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,22 +78,6 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
           NavigatorHandler.pop();
         },
         actions: [
-          IconButton(
-            onPressed: tripsState.hasValue
-                ? () async {
-                    final trips = tripsState.valueOrNull ?? [];
-                    await FactoryMonthlyReportService.shareFactoryReport(
-                      factory: currentFactory,
-                      trips: trips,
-                    );
-                  }
-                : null,
-            icon: Icon(
-              Icons.print_outlined,
-              color: AppColors.white,
-              size: 24.sp,
-            ),
-          ),
           Padding(
             padding: EdgeInsets.only(right: 4.w),
             child: InkWell(
@@ -220,12 +204,14 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
           data: (trips) {
             double totalRev = 0;
             double totalExp = 0;
+            double totalDriverWages = 0;
             int tripsCount = 0;
             int nightOutingsCount = 0;
 
             for (final t in trips) {
               totalRev += t.revenue;
               totalExp += t.expenses;
+              totalDriverWages += (t.driverWage ?? 0);
               if (t.isNightOuting) {
                 nightOutingsCount++;
               } else {
@@ -283,8 +269,8 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                             ),
                           ),
                           child: Icon(
-                            Icons.factory_outlined,
-                            size: 38.sp,
+                            Icons.factory_rounded,
+                            size: 42.sp,
                             color: AppColors.primary,
                           ),
                         ),
@@ -298,8 +284,30 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                           fontColor: AppColors.primary,
                         ),
 
-                        if (currentFactory.details.isNotEmpty) ...[
+                        SizedBox(height: 6.h),
+
+                        if (currentFactory.phone.trim().isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CustomText(
+                                title: currentFactory.phone,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                                fontColor: const Color(0xFF666A73),
+                              ),
+                              SizedBox(width: 5.w),
+                              Icon(
+                                Icons.phone_outlined,
+                                size: 16.sp,
+                                color: const Color(0xFF666A73),
+                              ),
+                            ],
+                          ),
                           SizedBox(height: 6.h),
+                        ],
+
+                        if (currentFactory.details.trim().isNotEmpty) ...[
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -320,9 +328,8 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                               ),
                             ],
                           ),
+                          SizedBox(height: 16.h),
                         ],
-
-                        SizedBox(height: 16.h),
 
                         // Stats Grid: Trips, Night Outings, Revenue, Net
                         Row(
@@ -366,6 +373,51 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                             ),
                           ],
                         ),
+
+                        if (totalDriverWages > 0) ...[
+                          SizedBox(height: 10.h),
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 10.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: const Color(0xFFFDE68A),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.badge_outlined,
+                                      size: 18.sp,
+                                      color: const Color(0xFFD97706),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    CustomText(
+                                      title: 'إجمالي أجور السائقين',
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w600,
+                                      fontColor: const Color(0xFF92400E),
+                                    ),
+                                  ],
+                                ),
+                                CustomText(
+                                  title: '${totalDriverWages.toStringAsFixed(0)} ج.م',
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w800,
+                                  fontColor: const Color(0xFFB45309),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -459,6 +511,47 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
 
                   SizedBox(height: 16.h),
 
+                  // =================== عرض الكل ===================
+                  Padding(
+                    padding: EdgeInsets.only(right: 28.w, left: 24.w),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            NavigatorHandler.push(
+                              AllTripsPage(
+                                entity: currentFactory,
+                                title: 'رحلات ${currentFactory.name}',
+                              ),
+                            );
+                          },
+                          child: CustomText(
+                            title: "عرض كل الرحلات؟",
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14.sp,
+                            fontColor: AppColors.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        Spacer(),
+                        CustomText(
+                          title: "رحلات المصنع",
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16.sp,
+                        ),
+                        SizedBox(width: 4.w),
+                        Icon(
+                          Icons.factory_outlined,
+                          size: 16.sp,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 8.h),
+
                   // =================== FILTER TABS ===================
                   Container(
                     padding: EdgeInsets.all(4.w),
@@ -504,7 +597,7 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                                 ? 'لا توجد سهرات مسجلة لهذا المصنع'
                                 : _selectedFilterIndex == 1
                                     ? 'لا توجد رحلات مسجلة لهذا المصنع'
-                                    : 'لا توجد عمليات مسجلة لهذا المصنع حتى الآن',
+                                    : 'لا توجد رحلات مسجلة لهذا المصنع حتى الآن',
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
                             fontColor: const Color(0xFF777B85),

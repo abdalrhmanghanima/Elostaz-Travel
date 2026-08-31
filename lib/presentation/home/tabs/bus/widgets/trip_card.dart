@@ -1,11 +1,16 @@
 import 'package:elostaz_travel/core/extensions/extensions.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_date_picker.dart';
+import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
+import 'package:elostaz_travel/domain/factory/entity/factory_entity.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/add_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_actions_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/provider/factory_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/add_factory_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,6 +55,69 @@ class TripCard extends ConsumerWidget {
           ),
           builder: (_) {
             return TripActionsBottomSheet(
+              onEdit: () async {
+                Navigator.pop(context);
+                final drivers = ref.read(driversProvider).valueOrNull ?? [];
+                final buses = ref.read(busProvider).valueOrNull ?? [];
+                final factories = ref.read(factoriesProvider).valueOrNull ?? [];
+
+                BusEntity? busEntity;
+                if (trip.busId.isNotEmpty) {
+                  try {
+                    busEntity = buses.firstWhere((b) => b.id == trip.busId);
+                  } catch (_) {}
+                }
+                busEntity ??= BusEntity(
+                  id: trip.busId,
+                  busName: trip.busName,
+                  plateNumber: trip.plateNumber,
+                  brand: '',
+                  chassisNumber: '',
+                  engineNumber: '',
+                  passengerCount: 0,
+                  vehicleType: '',
+                  specialConditions: '',
+                  insuranceType: '',
+                  licenseExpiryDate: DateTime.now().add(const Duration(days: 365)),
+                );
+
+                if (trip.factoryId != null && trip.factoryId!.isNotEmpty) {
+                  FactoryEntity? factoryEntity;
+                  try {
+                    factoryEntity = factories.firstWhere((f) => f.id == trip.factoryId);
+                  } catch (_) {}
+                  factoryEntity ??= FactoryEntity(
+                    id: trip.factoryId!,
+                    name: trip.factoryName ?? '',
+                    phone: '',
+                    details: '',
+                    tripsCount: 0,
+                    totalRevenue: 0,
+                    createdAt: DateTime.now(),
+                  );
+
+                  await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => AddFactoryTripBottomSheet(
+                      factory: factoryEntity!,
+                      tripToEdit: trip,
+                    ),
+                  );
+                } else {
+                  await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => AddTripBottomSheet(
+                      drivers: drivers,
+                      bus: busEntity!,
+                      tripToEdit: trip,
+                    ),
+                  );
+                }
+              },
               onDelete: () async {
                 Navigator.pop(context);
 
@@ -406,6 +474,42 @@ class TripCard extends ConsumerWidget {
                 ),
               ],
             ),
+
+            // Driver Wage if present
+            if (trip.driverWage != null && trip.driverWage! > 0) ...[
+              SizedBox(height: 10.h),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: 15.sp,
+                      color: const Color(0xFFD97706),
+                    ),
+                    SizedBox(width: 6.w),
+                    CustomText(
+                      title: 'أجر السائق (مستحق): ',
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      fontColor: const Color(0xFF92400E),
+                    ),
+                    CustomText(
+                      title: '${trip.driverWage!.toStringAsFixed(0)} ج.م',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      fontColor: const Color(0xFFB45309),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // Normal Expense Details if present
             if (trip.expenseDetails != null &&

@@ -16,6 +16,11 @@ class TripRepositoryImpl implements TripRepository {
   }
 
   @override
+  Future<void> updateTrip(TripEntity trip) {
+    return remoteDataSource.updateTrip(TripModel.fromEntity(trip));
+  }
+
+  @override
   Future<void> deleteTrip(String tripId) {
     return remoteDataSource.deleteTrip(tripId);
   }

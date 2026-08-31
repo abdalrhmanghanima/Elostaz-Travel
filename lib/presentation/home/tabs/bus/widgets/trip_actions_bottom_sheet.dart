@@ -7,9 +7,11 @@ class TripActionsBottomSheet extends StatelessWidget {
   const TripActionsBottomSheet({
     super.key,
     required this.onDelete,
+    this.onEdit,
   });
 
   final VoidCallback onDelete;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,43 @@ class TripActionsBottomSheet extends StatelessWidget {
             ),
 
             SizedBox(height: 20.h),
+
+            if (onEdit != null) ...[
+              InkWell(
+                onTap: onEdit,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20.sp,
+                      color: Colors.grey,
+                    ),
+                    const Spacer(),
+                    CustomText(
+                      title: 'تعديل بيانات الرحلة',
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w600,
+                      fontColor: AppColors.primary,
+                    ),
+                    SizedBox(width: 16.w),
+                    Container(
+                      width: 45.w,
+                      height: 45.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(.1),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        color: AppColors.primary,
+                        size: 24.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 24.h),
+            ],
 
             InkWell(
               onTap: onDelete,

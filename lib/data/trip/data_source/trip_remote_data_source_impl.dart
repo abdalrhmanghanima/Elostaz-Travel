@@ -77,11 +77,14 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
         trip.toFirestore(),
       );
 
+      final tripWage = trip.driverWage ?? 0.0;
       transaction.update(
         driverRef,
         {
           'tripsCount': FieldValue.increment(1),
           'totalRevenue': FieldValue.increment(trip.revenue),
+          if (tripWage != 0)
+            'accruedTripWages': FieldValue.increment(tripWage),
         },
       );
 
@@ -95,6 +98,88 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
             'totalRevenue': FieldValue.increment(trip.revenue),
           },
         );
+      }
+    });
+  }
+
+  @override
+  Future<void> updateTrip(TripModel trip) async {
+    final tripRef = _trips().doc(trip.id);
+
+    await firestore.runTransaction((transaction) async {
+      final tripSnapshot = await transaction.get(tripRef);
+
+      if (!tripSnapshot.exists) {
+        throw Exception('Trip not found');
+      }
+
+      final oldData = tripSnapshot.data() ?? {};
+      final oldRevenue = (oldData['revenue'] as num?)?.toDouble() ?? 0.0;
+      final oldDriverId = oldData['driverId']?.toString() ?? '';
+      final oldFactoryId = oldData['factoryId']?.toString();
+      final oldWage = (oldData['driverWage'] as num?)?.toDouble() ?? 0.0;
+      final newWage = trip.driverWage ?? 0.0;
+
+      final revDiff = trip.revenue - oldRevenue;
+      final wageDiff = newWage - oldWage;
+
+      // Overwrite trip doc with new model
+      transaction.set(tripRef, trip.toFirestore());
+
+      // Update driver(s)
+      if (oldDriverId == trip.driverId) {
+        if ((revDiff != 0 || wageDiff != 0) && trip.driverId.isNotEmpty) {
+          final driverRef = _drivers().doc(trip.driverId);
+          transaction.update(driverRef, {
+            if (revDiff != 0) 'totalRevenue': FieldValue.increment(revDiff),
+            if (wageDiff != 0)
+              'accruedTripWages': FieldValue.increment(wageDiff),
+          });
+        }
+      } else {
+        if (oldDriverId.isNotEmpty) {
+          final oldDriverRef = _drivers().doc(oldDriverId);
+          transaction.update(oldDriverRef, {
+            'tripsCount': FieldValue.increment(-1),
+            'totalRevenue': FieldValue.increment(-oldRevenue),
+            if (oldWage != 0)
+              'accruedTripWages': FieldValue.increment(-oldWage),
+          });
+        }
+        if (trip.driverId.isNotEmpty) {
+          final newDriverRef = _drivers().doc(trip.driverId);
+          transaction.update(newDriverRef, {
+            'tripsCount': FieldValue.increment(1),
+            'totalRevenue': FieldValue.increment(trip.revenue),
+            if (newWage != 0)
+              'accruedTripWages': FieldValue.increment(newWage),
+          });
+        }
+      }
+
+      // Update factory(ies)
+      if (oldFactoryId == trip.factoryId) {
+        if (revDiff != 0 && trip.factoryId != null && trip.factoryId!.isNotEmpty) {
+          final factoryRef = _factories().doc(trip.factoryId!);
+          transaction.update(factoryRef, {
+            'totalRevenue': FieldValue.increment(revDiff),
+          });
+        }
+      } else {
+        if (oldFactoryId != null && oldFactoryId.isNotEmpty) {
+          final oldFactoryRef = _factories().doc(oldFactoryId);
+          transaction.update(oldFactoryRef, {
+            'tripsCount': FieldValue.increment(-1),
+            'totalRevenue': FieldValue.increment(-oldRevenue),
+          });
+        }
+        if (trip.factoryId != null && trip.factoryId!.isNotEmpty) {
+          final newFactoryRef = _factories().doc(trip.factoryId!);
+          transaction.update(newFactoryRef, {
+            'tripsCount': FieldValue.increment(1),
+            'totalRevenue': FieldValue.increment(trip.revenue),
+          });
+        }
       }
     });
   }
@@ -115,6 +200,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       final driverId = tripData['driverId'] as String?;
       final factoryId = tripData['factoryId'] as String?;
       final revenue = (tripData['revenue'] as num?)?.toDouble() ?? 0;
+      final tripWage = (tripData['driverWage'] as num?)?.toDouble() ?? 0;
 
       if (driverId == null || driverId.isEmpty) {
         throw Exception('Driver ID not found in trip');
@@ -141,6 +227,8 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
         {
           'tripsCount': FieldValue.increment(-1),
           'totalRevenue': FieldValue.increment(-revenue),
+          if (tripWage != 0)
+            'accruedTripWages': FieldValue.increment(-tripWage),
         },
       );
 

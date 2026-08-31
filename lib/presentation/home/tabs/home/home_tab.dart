@@ -13,6 +13,8 @@ import 'package:elostaz_travel/presentation/components/custom_text/custom_text.d
 import 'package:elostaz_travel/presentation/home/provider/bottom_nav_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/home/financial_summary/provider/company_financial_summary_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/notifications/provider/notifications_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/home/financial_summary/financial_summary_screen.dart';
 import 'package:elostaz_travel/presentation/home/tabs/home/provider/home_stats_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/widgets/custom_valid_container.dart';
@@ -179,6 +181,12 @@ class HomeTab extends ConsumerWidget {
                           label: "رخص سارية",
                           iconAsset: AppIcons.valid,
                           iconBgColor: AppColors.lightGreen,
+                          onTap: () {
+                            ref
+                                .read(selectedNotificationFilterProvider.notifier)
+                                .state = BusNotificationFilter.valid;
+                            ref.read(bottomNavProvider.notifier).state = 4;
+                          },
                         ),
                       ),
                       SizedBox(width: 10.w),
@@ -188,6 +196,9 @@ class HomeTab extends ConsumerWidget {
                           label: "العربيات",
                           iconAsset: AppIcons.bus,
                           iconBgColor: AppColors.lightGray,
+                          onTap: () {
+                            ref.read(bottomNavProvider.notifier).state = 1;
+                          },
                         ),
                       ),
                     ],
@@ -203,6 +214,12 @@ class HomeTab extends ConsumerWidget {
                           label: "رخص منتهية",
                           iconAsset: AppIcons.unValid,
                           iconBgColor: AppColors.lightRed,
+                          onTap: () {
+                            ref
+                                .read(selectedNotificationFilterProvider.notifier)
+                                .state = BusNotificationFilter.expired;
+                            ref.read(bottomNavProvider.notifier).state = 4;
+                          },
                         ),
                       ),
                       SizedBox(width: 10.w),
@@ -213,6 +230,12 @@ class HomeTab extends ConsumerWidget {
                           label: "تنتهي قريبًا",
                           iconAsset: AppIcons.warning,
                           iconBgColor: AppColors.lightYellow,
+                          onTap: () {
+                            ref
+                                .read(selectedNotificationFilterProvider.notifier)
+                                .state = BusNotificationFilter.expiringSoon;
+                            ref.read(bottomNavProvider.notifier).state = 4;
+                          },
                         ),
                       ),
                     ],
@@ -228,6 +251,14 @@ class HomeTab extends ConsumerWidget {
                           label: "رحلات الشهر",
                           iconAsset: AppIcons.trip,
                           iconBgColor: AppColors.lightGray,
+                          onTap: () {
+                            ref.read(selectedFinancialPeriodProvider.notifier).state =
+                                FinancialPeriod.currentMonth;
+
+                            NavigatorHandler.push(
+                              const FinancialSummaryScreen(),
+                            );
+                          },
                         ),
                       ),
                       SizedBox(width: 10.w),
@@ -237,6 +268,9 @@ class HomeTab extends ConsumerWidget {
                           label: "السائقين",
                           iconAsset: AppIcons.person,
                           iconBgColor: AppColors.lightGray,
+                          onTap: () {
+                            ref.read(bottomNavProvider.notifier).state = 2;
+                          },
                         ),
                       ),
                     ],
@@ -276,58 +310,64 @@ class _StatCard extends StatelessWidget {
     required this.label,
     required this.iconAsset,
     required this.iconBgColor,
+    this.onTap,
   });
 
   final String value;
   final String label;
   final String iconAsset;
   final Color iconBgColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Flexible(
-                child: CustomText(
-                  title: value,
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w700,
-                  maxLines: 1,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: CustomText(
+                    title: value,
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.w700,
+                    maxLines: 1,
+                  ),
                 ),
-              ),
 
-              SizedBox(width: 8.w),
+                SizedBox(width: 8.w),
 
-              CustomValidContainer(
-                icon: iconAsset,
-                iconBackgroundColor: iconBgColor,
-              ),
-            ],
-          ),
-
-          SizedBox(height: 10.h),
-
-          Align(
-            alignment: Alignment.center,
-            child: CustomText(
-              title: label,
-              fontWeight: FontWeight.w700,
-              maxLines: 1,
+                CustomValidContainer(
+                  icon: iconAsset,
+                  iconBackgroundColor: iconBgColor,
+                ),
+              ],
             ),
-          ),
-        ],
+
+            SizedBox(height: 10.h),
+
+            Align(
+              alignment: Alignment.center,
+              child: CustomText(
+                title: label,
+                fontWeight: FontWeight.w700,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -782,3 +822,4 @@ class _FinancialSummaryCard extends StatelessWidget {
     );
   }
 }
+

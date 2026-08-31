@@ -39,6 +39,7 @@ class TripEntity {
   final String details;
   final double revenue;
   final double expenses;
+  final double? driverWage;
   final String? expenseDetails;
   final String? factoryId;
   final String? factoryName;
@@ -67,6 +68,7 @@ class TripEntity {
     this.details = '',
     this.revenue = 0.0,
     this.expenses = 0.0,
+    this.driverWage,
     this.expenseDetails,
     this.factoryId,
     this.factoryName,
@@ -110,4 +112,61 @@ class TripEntity {
       (sahraExpense != null && sahraExpense! > 0);
 
   bool get hasSahra => isNightOuting || hasLegacySahra;
+
+  TripEntity copyWith({
+    String? id,
+    String? driverId,
+    String? driverName,
+    String? busId,
+    String? busName,
+    String? plateNumber,
+    String? details,
+    double? revenue,
+    double? expenses,
+    double? driverWage,
+    bool clearDriverWage = false,
+    String? expenseDetails,
+    String? factoryId,
+    String? factoryName,
+    String? departureTime,
+    String? type,
+    DateTime? createdAt,
+    DateTime? tripDate,
+    bool? isNightShift,
+    List<TripExpenseItem>? expenseItems,
+    String? sahraDetails,
+    String? sahraDriverId,
+    String? sahraDriverName,
+    double? sahraRevenue,
+    double? sahraExpense,
+    String? sahraExpenseDetails,
+  }) {
+    return TripEntity(
+      id: id ?? this.id,
+      driverId: driverId ?? this.driverId,
+      driverName: driverName ?? this.driverName,
+      busId: busId ?? this.busId,
+      busName: busName ?? this.busName,
+      plateNumber: plateNumber ?? this.plateNumber,
+      details: details ?? this.details,
+      revenue: revenue ?? this.revenue,
+      expenses: expenses ?? this.expenses,
+      driverWage: clearDriverWage ? null : (driverWage ?? this.driverWage),
+      expenseDetails: expenseDetails ?? this.expenseDetails,
+      factoryId: factoryId ?? this.factoryId,
+      factoryName: factoryName ?? this.factoryName,
+      departureTime: departureTime ?? this.departureTime,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+      tripDate: tripDate ?? this.tripDate,
+      isNightShift: isNightShift ?? this.isNightShift,
+      expenseItems: expenseItems ?? this.expenseItems,
+      sahraDetails: sahraDetails ?? this.sahraDetails,
+      sahraDriverId: sahraDriverId ?? this.sahraDriverId,
+      sahraDriverName: sahraDriverName ?? this.sahraDriverName,
+      sahraRevenue: sahraRevenue ?? this.sahraRevenue,
+      sahraExpense: sahraExpense ?? this.sahraExpense,
+      sahraExpenseDetails: sahraExpenseDetails ?? this.sahraExpenseDetails,
+    );
+  }
 }

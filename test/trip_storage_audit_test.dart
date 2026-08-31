@@ -40,6 +40,13 @@ class _FakeTripRepository implements TripRepository {
   }
 
   @override
+  Future<void> updateTrip(TripEntity trip) async {
+    if (trip.id != null && _store.containsKey(trip.id)) {
+      _store[trip.id!] = trip;
+    }
+  }
+
+  @override
   Future<void> deleteTrip(String tripId) async {
     _store.remove(tripId);
   }

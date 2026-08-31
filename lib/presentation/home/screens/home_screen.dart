@@ -110,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       isSelected: currentScreen == 1,
                     ),
                   ),
-                  label: 'الأتوبيسات',
+                  label: 'العربيات',
                 ),
                 BottomNavigationBarItem(
                   icon: Transform.translate(

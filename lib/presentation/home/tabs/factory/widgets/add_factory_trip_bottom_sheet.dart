@@ -20,10 +20,12 @@ class AddFactoryTripBottomSheet extends ConsumerStatefulWidget {
     super.key,
     required this.factory,
     this.initialType = TripType.trip,
+    this.tripToEdit,
   });
 
   final FactoryEntity factory;
   final String initialType;
+  final TripEntity? tripToEdit;
 
   @override
   ConsumerState<AddFactoryTripBottomSheet> createState() =>
@@ -37,6 +39,7 @@ class _AddFactoryTripBottomSheetState
   final detailsController = TextEditingController();
   final revenueController = TextEditingController();
   final expensesController = TextEditingController();
+  final driverWageController = TextEditingController();
   final expenseDetailsController = TextEditingController();
 
   BusEntity? selectedBus;
@@ -44,7 +47,34 @@ class _AddFactoryTripBottomSheetState
   DateTime? selectedDate = DateTime.now();
   TimeOfDay? departureTime;
 
-  bool get isNightOuting => widget.initialType == TripType.nightOuting;
+  bool get isNightOuting =>
+      (widget.tripToEdit?.isNightOuting ?? widget.initialType == TripType.nightOuting);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tripToEdit != null) {
+      final trip = widget.tripToEdit!;
+      detailsController.text = trip.details;
+      if (trip.revenue > 0) {
+        revenueController.text = trip.revenue % 1 == 0
+            ? trip.revenue.toInt().toString()
+            : trip.revenue.toString();
+      }
+      if (trip.expenses > 0) {
+        expensesController.text = trip.expenses % 1 == 0
+            ? trip.expenses.toInt().toString()
+            : trip.expenses.toString();
+      }
+      if (trip.driverWage != null && trip.driverWage! > 0) {
+        driverWageController.text = trip.driverWage! % 1 == 0
+            ? trip.driverWage!.toInt().toString()
+            : trip.driverWage!.toString();
+      }
+      expenseDetailsController.text = trip.expenseDetails ?? '';
+      selectedDate = trip.tripDate ?? trip.createdAt;
+    }
+  }
 
   String _formatTimeOfDay(TimeOfDay time) {
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
@@ -77,6 +107,7 @@ class _AddFactoryTripBottomSheetState
     detailsController.dispose();
     revenueController.dispose();
     expensesController.dispose();
+    driverWageController.dispose();
     expenseDetailsController.dispose();
     super.dispose();
   }
@@ -90,7 +121,22 @@ class _AddFactoryTripBottomSheetState
     final buses = busesState.valueOrNull ?? [];
     final drivers = driversState.valueOrNull ?? [];
 
-    final title = isNightOuting ? 'إضافة سهرة جديدة' : 'إضافة رحلة جديدة';
+    if (widget.tripToEdit != null) {
+      if (selectedBus == null && widget.tripToEdit!.busId.isNotEmpty) {
+        try {
+          selectedBus = buses.firstWhere((b) => b.id == widget.tripToEdit!.busId);
+        } catch (_) {}
+      }
+      if (selectedDriver == null && widget.tripToEdit!.driverId.isNotEmpty) {
+        try {
+          selectedDriver = drivers.firstWhere((d) => d.id == widget.tripToEdit!.driverId);
+        } catch (_) {}
+      }
+    }
+
+    final title = widget.tripToEdit != null
+        ? (isNightOuting ? 'تعديل السهرة' : 'تعديل الرحلة')
+        : (isNightOuting ? 'إضافة سهرة جديدة' : 'إضافة رحلة جديدة');
     final primaryColor = isNightOuting ? AppColors.green : AppColors.primary;
     final bgColor = isNightOuting ? const Color(0xFFF0FDF4) : const Color(0xFFF0F4FF);
     final borderColor = isNightOuting ? const Color(0xFFDCFCE7) : const Color(0xFFD0DCFF);
@@ -382,6 +428,7 @@ class _AddFactoryTripBottomSheetState
                     ),
                   ),
                   SizedBox(height: 14.h),
+                  // =================== REVENUE ===================
                   CustomText(
                     title: isNightOuting ? 'إيراد السهرة (ج.م) (اختياري)' : 'إيراد الوردية / الرحلة (ج.م) (اختياري)',
                     fontSize: 13.sp,
@@ -397,6 +444,25 @@ class _AddFactoryTripBottomSheetState
                     validator: (value) => (value != null && value.trim().isNotEmpty && parseArabicNumber(value) == null) ? 'أدخل رقم صحيح' : null,
                   ),
                   SizedBox(height: 14.h),
+
+                  // =================== DRIVER WAGE ===================
+                  CustomText(
+                    title: 'أجر السائق (ج.م) (اختياري)',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontColor: const Color(0xFF555555),
+                  ),
+                  SizedBox(height: 6.h),
+                  CustomTextFormField(
+                    controller: driverWageController,
+                    hint: '0',
+                    textInputType: const TextInputType.numberWithOptions(decimal: true),
+                    prefix: Icon(Icons.badge_outlined, size: 22.sp, color: const Color(0xFF777B85)),
+                    validator: (value) => (value != null && value.trim().isNotEmpty && parseArabicNumber(value) == null) ? 'أدخل رقم صحيح' : null,
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // =================== EXPENSES ===================
                   CustomText(
                     title: isNightOuting ? 'مصروف السهرة (ج.م) (اختياري)' : 'مصروف الرحلة (ج.م) (اختياري)',
                     fontSize: 13.sp,
@@ -426,7 +492,9 @@ class _AddFactoryTripBottomSheetState
                   ),
                   SizedBox(height: 24.h),
                   CustomButton(
-                    title: isNightOuting ? 'حفظ السهرة' : 'حفظ الرحلة',
+                    title: widget.tripToEdit != null
+                        ? 'حفظ التعديلات'
+                        : (isNightOuting ? 'حفظ السهرة' : 'حفظ الرحلة'),
                     width: double.infinity,
                     height: 56.h,
                     bg: primaryColor,
@@ -440,8 +508,10 @@ class _AddFactoryTripBottomSheetState
                       if (!formKey.currentState!.validate()) return;
                       final revenue = parseArabicNumber(revenueController.text) ?? 0.0;
                       final expenses = parseArabicNumber(expensesController.text) ?? 0.0;
+                      final driverWage = parseArabicNumber(driverWageController.text);
+
                       final trip = TripEntity(
-                        id: '',
+                        id: widget.tripToEdit?.id ?? '',
                         driverId: selectedDriver!.id,
                         driverName: selectedDriver!.name,
                         busId: selectedBus!.id ?? '',
@@ -450,20 +520,36 @@ class _AddFactoryTripBottomSheetState
                         details: detailsController.text.trim(),
                         revenue: revenue,
                         expenses: expenses,
+                        driverWage: driverWage,
                         expenseDetails: expenseDetailsController.text.trim().isNotEmpty ? expenseDetailsController.text.trim() : null,
                         factoryId: widget.factory.id,
                         factoryName: widget.factory.name,
-                        departureTime: departureTime != null ? _formatTimeOfDay(departureTime!) : null,
+                        departureTime: departureTime != null
+                            ? _formatTimeOfDay(departureTime!)
+                            : (widget.tripToEdit?.departureTime),
                         type: isNightOuting ? TripType.nightOuting : TripType.trip,
                         tripDate: selectedDate,
-                        createdAt: selectedDate ?? DateTime.now(),
+                        createdAt: widget.tripToEdit?.createdAt ?? (selectedDate ?? DateTime.now()),
                       );
-                      final success = await ref.read(tripProvider.notifier).addTrip(trip);
+
+                      final bool success;
+                      if (widget.tripToEdit != null) {
+                        success = await ref.read(tripProvider.notifier).updateTrip(trip);
+                      } else {
+                        success = await ref.read(tripProvider.notifier).addTrip(trip);
+                      }
+
                       if (!context.mounted) return;
                       if (success) {
                         ref.invalidate(factoryTripsProvider(widget.factory.id));
                         ref.invalidate(busTripsProvider(selectedBus!.id ?? ''));
                         ref.invalidate(driverTripsProvider(selectedDriver!.id));
+                        if (widget.tripToEdit != null && widget.tripToEdit!.driverId != selectedDriver!.id) {
+                          ref.invalidate(driverTripsProvider(widget.tripToEdit!.driverId));
+                        }
+                        if (widget.tripToEdit != null && widget.tripToEdit!.busId != selectedBus!.id) {
+                          ref.invalidate(busTripsProvider(widget.tripToEdit!.busId));
+                        }
                         ref.invalidate(factoriesProvider);
                         ref.invalidate(driversProvider);
                         ref.invalidate(busProvider);

@@ -1,10 +1,13 @@
+import 'package:elostaz_travel/domain/driver/entity/driver_wage_payment_entity.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_wage_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/trip/provider/trip_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum FinancialPeriod {
   currentMonth(title: 'هذا الشهر'),
   previousMonth(title: 'الشهر السابق'),
+  customMonth(title: 'اختيار شهر'),
   all(title: 'الكل');
 
   final String title;
@@ -18,6 +21,7 @@ class BusFinancialGroup {
   final List<TripEntity> trips;
   final double busRevenue;
   final double busExpenses;
+  final double busDriverWages;
   final double busNet;
 
   const BusFinancialGroup({
@@ -27,6 +31,7 @@ class BusFinancialGroup {
     required this.trips,
     required this.busRevenue,
     required this.busExpenses,
+    this.busDriverWages = 0.0,
     required this.busNet,
   });
 }
@@ -37,6 +42,8 @@ class CompanyFinancialSummary {
   final int totalTrips;
   final double totalRevenue;
   final double totalExpenses;
+  final double totalDriverWages;
+  final double totalDriverWagesPaid;
   final double totalNetRevenue;
   final List<BusFinancialGroup> busGroups;
   final List<TripEntity> allTrips;
@@ -47,6 +54,8 @@ class CompanyFinancialSummary {
     required this.totalTrips,
     required this.totalRevenue,
     required this.totalExpenses,
+    this.totalDriverWages = 0.0,
+    this.totalDriverWagesPaid = 0.0,
     required this.totalNetRevenue,
     required this.busGroups,
     required this.allTrips,
@@ -58,6 +67,8 @@ class CompanyFinancialSummary {
     totalTrips: 0,
     totalRevenue: 0,
     totalExpenses: 0,
+    totalDriverWages: 0,
+    totalDriverWagesPaid: 0,
     totalNetRevenue: 0,
     busGroups: [],
     allTrips: [],
@@ -67,9 +78,13 @@ class CompanyFinancialSummary {
 final selectedFinancialPeriodProvider =
     StateProvider<FinancialPeriod>((ref) => FinancialPeriod.currentMonth);
 
+final selectedCustomMonthProvider =
+    StateProvider<DateTime?>((ref) => null);
+
 final companyFinancialSummaryProvider =
     FutureProvider.autoDispose<CompanyFinancialSummary>((ref) async {
   final period = ref.watch(selectedFinancialPeriodProvider);
+  final customMonth = ref.watch(selectedCustomMonthProvider);
   final now = DateTime.now();
 
   final int currentYear = now.year;
@@ -94,11 +109,58 @@ final companyFinancialSummaryProvider =
         monthlyTripsProvider((year: prevYear, month: prevMonth)).future,
       );
       break;
+    case FinancialPeriod.customMonth:
+      if (customMonth != null) {
+        final selectedYear = customMonth.year;
+        final selectedMonth = customMonth.month;
+        periodLabel = 'شهر ${_arabicMonthName(selectedMonth)} $selectedYear';
+        final allTrips = await ref.watch(allTripsProvider.future);
+        trips = allTrips.where((trip) {
+          final date = trip.effectiveDate;
+          return date.year == selectedYear && date.month == selectedMonth;
+        }).toList();
+      } else {
+        periodLabel = 'جميع الفترات';
+        trips = await ref.watch(allTripsProvider.future);
+      }
+      break;
     case FinancialPeriod.all:
       periodLabel = 'جميع الفترات';
       trips = await ref.watch(allTripsProvider.future);
       break;
   }
+
+  // Fetch all wage payments and filter by the selected period
+  final allPayments = await ref.watch(allDriverWagePaymentsProvider.future);
+  final List<DriverWagePaymentEntity> periodPayments;
+  switch (period) {
+    case FinancialPeriod.currentMonth:
+      periodPayments = allPayments
+          .where((p) => p.date.year == currentYear && p.date.month == currentMonth)
+          .toList();
+      break;
+    case FinancialPeriod.previousMonth:
+      periodPayments = allPayments
+          .where((p) => p.date.year == prevYear && p.date.month == prevMonth)
+          .toList();
+      break;
+    case FinancialPeriod.customMonth:
+      if (customMonth != null) {
+        periodPayments = allPayments
+            .where((p) =>
+                p.date.year == customMonth.year && p.date.month == customMonth.month)
+            .toList();
+      } else {
+        periodPayments = allPayments;
+      }
+      break;
+    case FinancialPeriod.all:
+      periodPayments = allPayments;
+      break;
+  }
+
+  final companyDriverWagesPaid =
+      periodPayments.fold<double>(0, (sum, p) => sum + p.amount);
 
   // 1. Group trips by bus
   final Map<String, List<TripEntity>> tripsByBus = {};
@@ -110,6 +172,7 @@ final companyFinancialSummaryProvider =
   final List<BusFinancialGroup> busGroups = [];
   double companyRevenue = 0;
   double companyExpenses = 0;
+  double companyDriverWages = 0;
 
   for (final entry in tripsByBus.entries) {
     final busTrips = entry.value;
@@ -122,14 +185,17 @@ final companyFinancialSummaryProvider =
 
     double groupRev = 0;
     double groupExp = 0;
+    double groupWages = 0;
 
     for (final t in busTrips) {
       groupRev += t.revenue;
       groupExp += t.expenses;
+      groupWages += (t.driverWage ?? 0);
     }
 
     companyRevenue += groupRev;
     companyExpenses += groupExp;
+    companyDriverWages += groupWages;
 
     busGroups.add(
       BusFinancialGroup(
@@ -139,6 +205,7 @@ final companyFinancialSummaryProvider =
         trips: busTrips,
         busRevenue: groupRev,
         busExpenses: groupExp,
+        busDriverWages: groupWages,
         busNet: groupRev - groupExp,
       ),
     );
@@ -153,7 +220,9 @@ final companyFinancialSummaryProvider =
     totalTrips: trips.length,
     totalRevenue: companyRevenue,
     totalExpenses: companyExpenses,
-    totalNetRevenue: companyRevenue - companyExpenses,
+    totalDriverWages: companyDriverWages,
+    totalDriverWagesPaid: companyDriverWagesPaid,
+    totalNetRevenue: companyRevenue - companyExpenses - companyDriverWagesPaid,
     busGroups: busGroups,
     allTrips: trips,
   );

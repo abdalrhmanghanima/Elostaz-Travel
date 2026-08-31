@@ -18,7 +18,6 @@ import 'package:elostaz_travel/presentation/home/tabs/bus/bus_trips_screen.dart'
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/add_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_action_bottom_sheet.dart';
-import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_monthly_report_service.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/delete_bus_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/edit_bus_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
@@ -70,25 +69,6 @@ class BusDetailsScreen extends ConsumerWidget {
           NavigatorHandler.pop();
         },
         actions: [
-          IconButton(
-            onPressed: () {
-              tripsState.whenData(
-                    (trips) {
-                  BusMonthlyReportService
-                      .shareCurrentMonthReport(
-                    bus: currentBus,
-                    trips: trips,
-                  );
-                },
-              );
-            },
-            icon: Icon(
-              Icons.print_outlined,
-              color: AppColors.white,
-              size: 24.sp,
-            ),
-          ),
-          SizedBox(width: 2.w),
           Padding(
             padding: EdgeInsets.only(right: 4.w),
             child: InkWell(

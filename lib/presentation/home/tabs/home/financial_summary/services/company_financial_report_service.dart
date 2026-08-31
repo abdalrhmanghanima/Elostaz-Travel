@@ -7,15 +7,27 @@ import 'package:printing/printing.dart';
 class CompanyFinancialReportService {
   static Future<void> shareCompanyReport({
     required CompanyFinancialSummary summary,
+    String? periodTitle,
   }) async {
     final now = DateTime.now();
 
+    final displayPeriod =
+        periodTitle ?? summary.periodLabel;
+
+    // ============================================================
+    // Fonts
+    // ============================================================
+
     final regularFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/Cairo-Regular.ttf'),
+      await rootBundle.load(
+        'assets/fonts/Cairo-Regular.ttf',
+      ),
     );
 
     final boldFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/Cairo-Bold.ttf'),
+      await rootBundle.load(
+        'assets/fonts/Cairo-Bold.ttf',
+      ),
     );
 
     final pdf = pw.Document();
@@ -25,34 +37,52 @@ class CompanyFinancialReportService {
       bold: boldFont,
     );
 
-    final tripsCount = summary.allTrips.where((t) => t.isTrip).length;
-    final nightOutingsCount = summary.allTrips.where((t) => t.isNightOuting).length;
+    // ============================================================
+    // Essential statistics only
+    // ============================================================
+
+    final tripsCount =
+        summary.allTrips.where((t) => t.isTrip).length;
+
+    final nightOutingsCount =
+        summary.allTrips.where((t) => t.isNightOuting).length;
+
+    // ============================================================
+    // PDF
+    // ============================================================
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         theme: theme,
         textDirection: pw.TextDirection.rtl,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+
+        // Small margins = more content per page.
+        margin: const pw.EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+
         footer: (context) {
           return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 6),
+            margin: const pw.EdgeInsets.only(top: 4),
             child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              mainAxisAlignment:
+              pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
                   'صفحة ${context.pageNumber} من ${context.pagesCount}',
                   style: pw.TextStyle(
                     font: regularFont,
-                    fontSize: 8,
+                    fontSize: 7,
                     color: PdfColors.grey600,
                   ),
                 ),
                 pw.Text(
-                  'الملخص المالي الشامل — شركة الأستاذ للنقل السياحي',
+                  'الملخص المالي للشركة',
                   style: pw.TextStyle(
                     font: regularFont,
-                    fontSize: 8,
+                    fontSize: 7,
                     color: PdfColors.grey600,
                   ),
                 ),
@@ -60,54 +90,71 @@ class CompanyFinancialReportService {
             ),
           );
         },
-        build: (context) {
-          final List<pw.Widget> widgets = [];
 
-          // ── 1. Header ──────────────────────────────────────────────────
+        build: (context) {
+          final widgets = <pw.Widget>[];
+
+          // ========================================================
+          // Header
+          // ========================================================
+
           widgets.add(
             pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              mainAxisAlignment:
+              pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment:
+              pw.CrossAxisAlignment.start,
               children: [
                 pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'الملخص المالي العام للشركة',
+                      'الملخص المالي للشركة',
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 17,
+                        fontSize: 16,
                         color: PdfColors.blue900,
                       ),
                     ),
+
                     pw.SizedBox(height: 2),
+
                     pw.Text(
-                      'الفترة: ${summary.periodLabel}',
+                      'الفترة: ${_resolvePeriodLabel(
+                        displayPeriod,
+                        summary,
+                        now,
+                      )}',
                       style: pw.TextStyle(
                         font: regularFont,
-                        fontSize: 10,
+                        fontSize: 9,
                         color: PdfColors.grey700,
                       ),
                     ),
                   ],
                 ),
+
                 pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  crossAxisAlignment:
+                  pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
                       'شركة الأستاذ للنقل السياحي',
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 14,
+                        fontSize: 13,
                         color: PdfColors.blue900,
                       ),
                     ),
+
                     pw.SizedBox(height: 2),
+
                     pw.Text(
                       'تاريخ التقرير: ${_formatDate(now)}',
                       style: pw.TextStyle(
                         font: regularFont,
-                        fontSize: 9,
+                        fontSize: 8,
                         color: PdfColors.grey600,
                       ),
                     ),
@@ -117,52 +164,89 @@ class CompanyFinancialReportService {
             ),
           );
 
-          widgets.add(pw.SizedBox(height: 10));
+          widgets.add(
+            pw.SizedBox(height: 8),
+          );
 
-          // ── 2. Top Summary KPI Card ─────────────────────────────────────
+          // ========================================================
+          // ONE Compact Financial Summary
+          // ========================================================
+
           widgets.add(
             pw.Container(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              width: double.infinity,
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 6,
+              ),
               decoration: pw.BoxDecoration(
                 color: PdfColors.grey100,
-                borderRadius: pw.BorderRadius.circular(6),
-                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                borderRadius:
+                pw.BorderRadius.circular(5),
+                border: pw.Border.all(
+                  color: PdfColors.grey300,
+                  width: 0.5,
+                ),
               ),
               child: pw.Row(
                 children: [
                   pw.Expanded(
-                    child: _kpiItem(
-                      title: 'إجمالي العمليات',
-                      value: '${summary.totalTrips} ($tripsCount رحلة + $nightOutingsCount سهرة)',
+                    child: _smallSummary(
+                      title: 'العمليات',
+                      value:
+                      '${summary.totalTrips}',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
                   ),
+
                   pw.Expanded(
-                    child: _kpiItem(
-                      title: 'إجمالي الإيرادات',
-                      value: '${_formatCurrency(summary.totalRevenue)} ج.م',
+                    child: _smallSummary(
+                      title: 'الرحلات / السهرات',
+                      value:
+                      '$tripsCount / $nightOutingsCount',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
                   ),
+
                   pw.Expanded(
-                    child: _kpiItem(
-                      title: 'إجمالي المصروفات',
-                      value: '${_formatCurrency(summary.totalExpenses)} ج.م',
+                    child: _smallSummary(
+                      title: 'الإيراد',
+                      value:
+                      '${_formatCurrency(summary.totalRevenue)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
                   ),
+
                   pw.Expanded(
-                    child: _kpiItem(
+                    child: _smallSummary(
+                      title: 'المصروف',
+                      value:
+                      '${_formatCurrency(summary.totalExpenses)} ج.م',
+                      regularFont: regularFont,
+                      boldFont: boldFont,
+                    ),
+                  ),
+
+                  pw.Expanded(
+                    child: _smallSummary(
                       title: 'صافي الأرباح',
-                      value: '${_formatCurrency(summary.totalNetRevenue)} ج.م',
+                      value:
+                      '${_formatCurrency(summary.totalNetRevenue)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
-                      valueColor: summary.totalNetRevenue >= 0
-                          ? PdfColors.green800
-                          : PdfColors.red800,
+                    ),
+                  ),
+
+                  pw.Expanded(
+                    child: _smallSummary(
+                      title: 'أجور السائقين',
+                      value:
+                      '${_formatCurrency(summary.totalDriverWages)} ج.م',
+                      regularFont: regularFont,
+                      boldFont: boldFont,
                     ),
                   ),
                 ],
@@ -170,223 +254,198 @@ class CompanyFinancialReportService {
             ),
           );
 
-          widgets.add(pw.SizedBox(height: 10));
+          widgets.add(
+            pw.SizedBox(height: 8),
+          );
 
-          // ── 3. Empty State or Grouped Bus Details ───────────────────────
-          if (summary.busGroups.isEmpty) {
+          // ========================================================
+          // ONE Operations Table
+          // ========================================================
+
+          if (summary.allTrips.isEmpty) {
             widgets.add(
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.all(25),
+                padding:
+                const pw.EdgeInsets.all(18),
                 decoration: pw.BoxDecoration(
                   color: PdfColors.grey100,
-                  borderRadius: pw.BorderRadius.circular(6),
+                  borderRadius:
+                  pw.BorderRadius.circular(5),
                 ),
                 child: pw.Center(
                   child: pw.Text(
                     'لا توجد رحلات أو سهرات مسجلة في هذه الفترة',
                     style: pw.TextStyle(
                       font: regularFont,
-                      fontSize: 11,
+                      fontSize: 10,
                     ),
                   ),
                 ),
               ),
             );
           } else {
-            for (final group in summary.busGroups) {
-              // Bus section header
-              widgets.add(
-                pw.Container(
-                  margin: const pw.EdgeInsets.only(top: 6, bottom: 4),
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: const pw.BoxDecoration(
-                    color: PdfColors.blueGrey50,
-                    borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
-                  ),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'الأتوبيس: ${group.busName}',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 9.5,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.Text(
-                        'لوحة: ${group.plateNumber}',
-                        style: pw.TextStyle(
-                          font: regularFont,
-                          fontSize: 8.5,
-                          color: PdfColors.grey800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            final trips = [...summary.allTrips]
+              ..sort(
+                    (a, b) => b.effectiveDate
+                    .compareTo(a.effectiveDate),
               );
 
-              // Compact Table for Bus Trips
-              widgets.add(
-                pw.TableHelper.fromTextArray(
-                  headers: [
-                    'النوع',
-                    'التاريخ',
-                    'السائق',
-                    'المصنع / الجهة',
-                    'التفاصيل وملاحظات المصروف',
-                    'الإيراد',
-                    'المصروف',
-                    'الصافي',
-                  ],
-                  data: group.trips.map((trip) {
-                    final net = trip.revenue - trip.expenses;
-                    final factoryLabel = (trip.factoryName != null && trip.factoryName!.trim().isNotEmpty)
-                        ? trip.factoryName!
-                        : '-';
-
-                    String details = trip.details.trim();
-                    if (trip.expenseDetails != null && trip.expenseDetails!.trim().isNotEmpty) {
-                      if (details.isNotEmpty) {
-                        details += '\n[مصروف: ${trip.expenseDetails!.trim()}]';
-                      } else {
-                        details = '[مصروف: ${trip.expenseDetails!.trim()}]';
-                      }
-                    }
-                    if (details.isEmpty) details = '-';
-
-                    final dateStr = trip.effectiveDate.year > 1970
-                        ? _formatDate(trip.effectiveDate)
-                        : 'غير محدد';
-
-                    return [
-                      trip.typeLabel,
-                      dateStr,
-                      trip.driverName.isNotEmpty ? trip.driverName : '-',
-                      factoryLabel,
-                      details,
-                      '${_formatCurrency(trip.revenue)} ج.م',
-                      '${_formatCurrency(trip.expenses)} ج.م',
-                      '${_formatCurrency(net)} ج.م',
-                    ];
-                  }).toList(),
-                  headerStyle: pw.TextStyle(
-                    font: boldFont,
-                    fontSize: 7.5,
-                  ),
-                  cellStyle: pw.TextStyle(
-                    font: regularFont,
-                    fontSize: 7,
-                  ),
-                  headerDecoration: const pw.BoxDecoration(
-                    color: PdfColors.grey200,
-                  ),
-                  border: pw.TableBorder.all(
-                    color: PdfColors.grey300,
-                    width: 0.5,
-                  ),
-                  cellPadding: const pw.EdgeInsets.symmetric(
-                    horizontal: 3,
-                    vertical: 3,
-                  ),
-                  cellAlignment: pw.Alignment.center,
-                  headerAlignment: pw.Alignment.center,
-                  columnWidths: {
-                    0: const pw.FixedColumnWidth(40),
-                    1: const pw.FixedColumnWidth(50),
-                    2: const pw.FixedColumnWidth(60),
-                    3: const pw.FixedColumnWidth(60),
-                    4: const pw.FlexColumnWidth(2.5),
-                    5: const pw.FixedColumnWidth(45),
-                    6: const pw.FixedColumnWidth(45),
-                    7: const pw.FixedColumnWidth(45),
-                  },
-                ),
-              );
-
-              // Bus Subtotal
-              widgets.add(
-                pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 6),
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.grey50,
-                    border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-                  ),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'إجمالي الأتوبيس (${group.trips.length} عملية):',
-                        style: pw.TextStyle(font: boldFont, fontSize: 8),
-                      ),
-                      pw.Text(
-                        'الإيراد: ${_formatCurrency(group.busRevenue)} ج.م',
-                        style: pw.TextStyle(font: regularFont, fontSize: 8),
-                      ),
-                      pw.Text(
-                        'المصروف: ${_formatCurrency(group.busExpenses)} ج.م',
-                        style: pw.TextStyle(font: regularFont, fontSize: 8),
-                      ),
-                      pw.Text(
-                        'الصافي: ${_formatCurrency(group.busNet)} ج.م',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 8.5,
-                          color: group.busNet >= 0
-                              ? PdfColors.green800
-                              : PdfColors.red800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            widgets.add(pw.SizedBox(height: 8));
-
-            // ── 4. Grand Final Total ───────────────────────────────────────
             widgets.add(
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blueGrey100,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blueGrey300, width: 0.5),
+              pw.TableHelper.fromTextArray(
+                headers: [
+                  'النوع',
+                  'التاريخ',
+                  'الأتوبيس',
+                  'السائق',
+                  'الجهة',
+                  'تفاصيل الرحلة والمصروف',
+                  'الإيراد',
+                  'المصروف',
+                  'الصافي',
+                  'أجر السائق',
+                ],
+
+                data: trips.map((trip) {
+                  final net =
+                      trip.revenue - trip.expenses;
+
+                  final dateStr =
+                  trip.effectiveDate.year > 1970
+                      ? _formatDate(
+                    trip.effectiveDate,
+                  )
+                      : 'غير محدد';
+
+                  final factoryLabel =
+                  trip.factoryName != null &&
+                      trip.factoryName!
+                          .trim()
+                          .isNotEmpty
+                      ? trip.factoryName!.trim()
+                      : '-';
+
+                  // Combine trip details and expense
+                  // details into one compact cell.
+                  String details =
+                  trip.details.trim();
+
+                  final expenseDetails =
+                      trip.expenseDetails
+                          ?.trim() ??
+                          '';
+
+                  if (expenseDetails.isNotEmpty) {
+                    if (details.isNotEmpty) {
+                      details +=
+                      '\nمصروف: $expenseDetails';
+                    } else {
+                      details =
+                      'مصروف: $expenseDetails';
+                    }
+                  }
+
+                  if (details.isEmpty) {
+                    details = '-';
+                  }
+
+                  final driverWage =
+                  trip.driverWage != null &&
+                      trip.driverWage! > 0
+                      ? '${_formatCurrency(
+                    trip.driverWage!,
+                  )} ج.م'
+                      : '-';
+
+                  return [
+                    trip.typeLabel,
+
+                    dateStr,
+
+                    trip.busName.isNotEmpty
+                        ? trip.busName
+                        : '-',
+
+                    trip.driverName.isNotEmpty
+                        ? trip.driverName
+                        : '-',
+
+                    factoryLabel,
+
+                    details,
+
+                    '${_formatCurrency(
+                      trip.revenue,
+                    )} ج.م',
+
+                    '${_formatCurrency(
+                      trip.expenses,
+                    )} ج.م',
+
+                    '${_formatCurrency(
+                      net,
+                    )} ج.م',
+
+                    driverWage,
+                  ];
+                }).toList(),
+
+                headerStyle: pw.TextStyle(
+                  font: boldFont,
+                  fontSize: 6.5,
                 ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'إجمالي الشركة (${summary.totalTrips} عملية):',
-                      style: pw.TextStyle(font: boldFont, fontSize: 9),
-                    ),
-                    pw.Text(
-                      'الإيرادات: ${_formatCurrency(summary.totalRevenue)} ج.م',
-                      style: pw.TextStyle(font: boldFont, fontSize: 8.5),
-                    ),
-                    pw.Text(
-                      'المصروفات: ${_formatCurrency(summary.totalExpenses)} ج.م',
-                      style: pw.TextStyle(font: boldFont, fontSize: 8.5),
-                    ),
-                    pw.Text(
-                      'صافي الأرباح: ${_formatCurrency(summary.totalNetRevenue)} ج.م',
-                      style: pw.TextStyle(
-                        font: boldFont,
-                        fontSize: 9.5,
-                        color: summary.totalNetRevenue >= 0
-                            ? PdfColors.green900
-                            : PdfColors.red900,
-                      ),
-                    ),
-                  ],
+
+                cellStyle: pw.TextStyle(
+                  font: regularFont,
+                  fontSize: 6.2,
                 ),
+
+                headerDecoration:
+                const pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                ),
+
+                border: pw.TableBorder.all(
+                  color: PdfColors.grey300,
+                  width: 0.4,
+                ),
+
+                cellPadding:
+                const pw.EdgeInsets.symmetric(
+                  horizontal: 2,
+                  vertical: 2.5,
+                ),
+
+                cellAlignment:
+                pw.Alignment.center,
+
+                headerAlignment:
+                pw.Alignment.center,
+
+                // Keep the table as compact as possible.
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(30),
+                  1: const pw.FixedColumnWidth(42),
+                  2: const pw.FixedColumnWidth(43),
+                  3: const pw.FixedColumnWidth(43),
+                  4: const pw.FixedColumnWidth(43),
+
+                  // Main details column.
+                  5: const pw.FlexColumnWidth(2.4),
+
+                  6: const pw.FixedColumnWidth(42),
+                  7: const pw.FixedColumnWidth(42),
+                  8: const pw.FixedColumnWidth(42),
+                  9: const pw.FixedColumnWidth(42),
+                },
               ),
             );
           }
+
+          // No bus subtotals.
+          // No duplicated company grand total.
+          // The compact summary at the top contains
+          // all required financial totals.
 
           return widgets;
         },
@@ -396,50 +455,121 @@ class CompanyFinancialReportService {
     await Printing.sharePdf(
       bytes: await pdf.save(),
       filename:
-          'تقرير_الملخص_المالي_${summary.period.name}_${now.year}_${now.month}_${now.day}.pdf',
+      'تقرير_الملخص_المالي_${summary.period.name}_${now.year}_${now.month}_${now.day}.pdf',
     );
   }
 
-  static pw.Widget _kpiItem({
+  // ==============================================================
+  // Compact Summary Item
+  // ==============================================================
+
+  static pw.Widget _smallSummary({
     required String title,
     required String value,
     required pw.Font regularFont,
     required pw.Font boldFont,
-    PdfColor? valueColor,
   }) {
     return pw.Column(
       children: [
         pw.Text(
           title,
+          textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             font: regularFont,
-            fontSize: 7.5,
+            fontSize: 6.2,
             color: PdfColors.grey600,
           ),
         ),
-        pw.SizedBox(height: 2),
+
+        pw.SizedBox(height: 1.5),
+
         pw.Text(
           value,
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             font: boldFont,
-            fontSize: 9,
-            color: valueColor ?? PdfColors.black,
+            fontSize: 8,
           ),
         ),
       ],
     );
   }
 
-  static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  // ==============================================================
+  // Period
+  // ==============================================================
+
+  static String _resolvePeriodLabel(
+      String? periodLabel,
+      CompanyFinancialSummary summary,
+      DateTime now,
+      ) {
+    if (periodLabel == 'الشهر الحالي') {
+      return 'شهر ${_monthName(now.month)} ${now.year}';
+    }
+
+    if (periodLabel == 'الشهر السابق') {
+      final previousMonth =
+      DateTime(now.year, now.month - 1);
+
+      return 'شهر ${_monthName(
+        previousMonth.month,
+      )} ${previousMonth.year}';
+    }
+
+    if (periodLabel == null ||
+        periodLabel.trim().isEmpty) {
+      return summary.periodLabel.isNotEmpty
+          ? summary.periodLabel
+          : 'شهر ${_monthName(now.month)} ${now.year}';
+    }
+
+    // Custom month labels already contain
+    // the concrete month/year.
+    return periodLabel;
   }
+
+  // ==============================================================
+  // Arabic Month
+  // ==============================================================
+
+  static String _monthName(int month) {
+    const months = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+
+    return months[month - 1];
+  }
+
+  // ==============================================================
+  // Date
+  // ==============================================================
+
+  static String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
+  // ==============================================================
+  // Currency
+  // ==============================================================
 
   static String _formatCurrency(double amount) {
     return amount.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (match) => '${match[1]},',
+    );
   }
 }
-

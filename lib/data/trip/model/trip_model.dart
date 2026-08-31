@@ -12,6 +12,7 @@ class TripModel extends TripEntity {
     super.details = '',
     super.revenue = 0.0,
     super.expenses = 0.0,
+    super.driverWage,
     super.expenseDetails,
     super.factoryId,
     super.factoryName,
@@ -87,6 +88,8 @@ class TripModel extends TripEntity {
       expenses: (data['expenses'] as num?)?.toDouble() ??
           double.tryParse(data['expenses']?.toString() ?? '') ??
           0.0,
+      driverWage: (data['driverWage'] as num?)?.toDouble() ??
+          double.tryParse(data['driverWage']?.toString() ?? ''),
       expenseDetails: data['expenseDetails']?.toString(),
       factoryId: data['factoryId'] as String?,
       factoryName: data['factoryName'] as String?,
@@ -118,6 +121,7 @@ class TripModel extends TripEntity {
       details: entity.details,
       revenue: entity.revenue,
       expenses: entity.expenses,
+      driverWage: entity.driverWage,
       expenseDetails: entity.expenseDetails,
       factoryId: entity.factoryId,
       factoryName: entity.factoryName,
@@ -149,6 +153,7 @@ class TripModel extends TripEntity {
       'type': type,
       'createdAt': Timestamp.fromDate(createdAt),
       if (tripDate != null) 'tripDate': Timestamp.fromDate(tripDate!),
+      if (driverWage != null) 'driverWage': driverWage,
       if (expenseDetails != null && expenseDetails!.isNotEmpty)
         'expenseDetails': expenseDetails,
       if (factoryId != null && factoryId!.isNotEmpty) 'factoryId': factoryId,

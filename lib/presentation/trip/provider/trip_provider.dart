@@ -10,6 +10,7 @@ import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
 import 'package:elostaz_travel/domain/trip/repository/trip_repository.dart';
 
 import 'package:elostaz_travel/domain/trip/use_case/add_trip_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/update_trip_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/delete_trip_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_use_case.dart';
@@ -31,6 +32,12 @@ final tripRepositoryProvider = Provider<TripRepository>((ref) {
 
 final addTripUseCaseProvider = Provider<AddTripUseCase>((ref) {
   return AddTripUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final updateTripUseCaseProvider = Provider<UpdateTripUseCase>((ref) {
+  return UpdateTripUseCase(
     repository: ref.read(tripRepositoryProvider),
   );
 });
@@ -76,6 +83,18 @@ class TripNotifier extends AsyncNotifier<void> {
 
     final result = await AsyncValue.guard(
           () => ref.read(addTripUseCaseProvider).call(trip),
+    );
+
+    state = result;
+
+    return !result.hasError;
+  }
+
+  Future<bool> updateTrip(TripEntity trip) async {
+    state = const AsyncLoading();
+
+    final result = await AsyncValue.guard(
+          () => ref.read(updateTripUseCaseProvider).call(trip),
     );
 
     state = result;

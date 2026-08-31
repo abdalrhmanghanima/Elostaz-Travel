@@ -20,10 +20,12 @@ class AddTripBottomSheet extends ConsumerStatefulWidget {
     super.key,
     required this.drivers,
     required this.bus,
+    this.tripToEdit,
   });
 
   final List<DriverEntity> drivers;
   final BusEntity bus;
+  final TripEntity? tripToEdit;
 
   @override
   ConsumerState<AddTripBottomSheet> createState() => _AddTripBottomSheetState();
@@ -35,12 +37,45 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
   final detailsController = TextEditingController();
   final revenueController = TextEditingController();
   final expensesController = TextEditingController();
+  final driverWageController = TextEditingController();
   final expenseDetailsController = TextEditingController();
 
   DriverEntity? selectedDriver;
   FactoryEntity? selectedFactory;
   DateTime? selectedDate = DateTime.now();
   TimeOfDay? departureTime;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tripToEdit != null) {
+      final trip = widget.tripToEdit!;
+      detailsController.text = trip.details;
+      if (trip.revenue > 0) {
+        revenueController.text = trip.revenue % 1 == 0
+            ? trip.revenue.toInt().toString()
+            : trip.revenue.toString();
+      }
+      if (trip.expenses > 0) {
+        expensesController.text = trip.expenses % 1 == 0
+            ? trip.expenses.toInt().toString()
+            : trip.expenses.toString();
+      }
+      if (trip.driverWage != null && trip.driverWage! > 0) {
+        driverWageController.text = trip.driverWage! % 1 == 0
+            ? trip.driverWage!.toInt().toString()
+            : trip.driverWage!.toString();
+      }
+      expenseDetailsController.text = trip.expenseDetails ?? '';
+      selectedDate = trip.tripDate ?? trip.createdAt;
+
+      try {
+        selectedDriver = widget.drivers.firstWhere(
+          (d) => d.id == trip.driverId,
+        );
+      } catch (_) {}
+    }
+  }
 
   String _formatTimeOfDay(TimeOfDay time) {
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
@@ -73,6 +108,7 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
     detailsController.dispose();
     revenueController.dispose();
     expensesController.dispose();
+    driverWageController.dispose();
     expenseDetailsController.dispose();
     super.dispose();
   }
@@ -82,6 +118,14 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
     final tripState = ref.watch(tripProvider);
     final factoriesState = ref.watch(factoriesProvider);
     final factories = factoriesState.valueOrNull ?? [];
+
+    if (widget.tripToEdit != null && selectedFactory == null && widget.tripToEdit!.factoryId != null) {
+      try {
+        selectedFactory = factories.firstWhere(
+          (f) => f.id == widget.tripToEdit!.factoryId,
+        );
+      } catch (_) {}
+    }
 
     return SafeArea(
       child: Padding(
@@ -555,6 +599,39 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                   SizedBox(height: 14.h),
 
+                  // =================== DRIVER WAGE (OPTIONAL) ===================
+                  CustomText(
+                    title: 'أجر السائق (ج.م) (اختياري)',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontColor: const Color(0xFF555555),
+                  ),
+
+                  SizedBox(height: 6.h),
+
+                  CustomTextFormField(
+                    controller: driverWageController,
+                    hint: '0',
+                    textInputType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    prefix: Icon(
+                      Icons.badge_outlined,
+                      size: 22.sp,
+                      color: const Color(0xFF777B85),
+                    ),
+                    validator: (value) {
+                      if (value != null &&
+                          value.trim().isNotEmpty &&
+                          parseArabicNumber(value) == null) {
+                        return 'أدخل رقم صحيح';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  SizedBox(height: 14.h),
+
                   // =================== EXPENSES (OPTIONAL) ===================
                   CustomText(
                     title: 'مصروف الرحلة (ج.م) (اختياري)',
@@ -611,7 +688,7 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                   // =================== SUBMIT BUTTON ===================
                   CustomButton(
-                    title: 'حفظ الرحلة',
+                    title: widget.tripToEdit != null ? 'حفظ التعديلات' : 'حفظ الرحلة',
                     width: double.infinity,
                     height: 56.h,
                     bg: AppColors.primary,
@@ -630,9 +707,11 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                           parseArabicNumber(revenueController.text) ?? 0.0;
                       final expenses =
                           parseArabicNumber(expensesController.text) ?? 0.0;
+                      final driverWage =
+                          parseArabicNumber(driverWageController.text);
 
                       final trip = TripEntity(
-                        id: '',
+                        id: widget.tripToEdit?.id ?? '',
                         driverId: selectedDriver!.id,
                         driverName: selectedDriver!.name,
                         busId: widget.bus.id ?? '',
@@ -641,6 +720,7 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                         details: detailsController.text.trim(),
                         revenue: revenue,
                         expenses: expenses,
+                        driverWage: driverWage,
                         expenseDetails:
                             expenseDetailsController.text.trim().isNotEmpty
                                 ? expenseDetailsController.text.trim()
@@ -649,24 +729,35 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                         factoryName: selectedFactory?.name,
                         departureTime: departureTime != null
                             ? _formatTimeOfDay(departureTime!)
-                            : null,
-                        type: TripType.trip,
+                            : (widget.tripToEdit?.departureTime),
+                        type: widget.tripToEdit?.type ?? TripType.trip,
                         tripDate: selectedDate,
-                        createdAt: selectedDate ?? DateTime.now(),
+                        createdAt: widget.tripToEdit?.createdAt ?? (selectedDate ?? DateTime.now()),
                       );
 
-                      final success =
-                          await ref.read(tripProvider.notifier).addTrip(trip);
+                      final bool success;
+                      if (widget.tripToEdit != null) {
+                        success = await ref.read(tripProvider.notifier).updateTrip(trip);
+                      } else {
+                        success = await ref.read(tripProvider.notifier).addTrip(trip);
+                      }
 
                       if (!context.mounted) return;
 
                       if (success) {
                         ref.invalidate(busTripsProvider(widget.bus.id ?? ''));
                         ref.invalidate(driverTripsProvider(selectedDriver!.id));
+                        if (widget.tripToEdit != null && widget.tripToEdit!.driverId != selectedDriver!.id) {
+                          ref.invalidate(driverTripsProvider(widget.tripToEdit!.driverId));
+                        }
                         if (selectedFactory != null) {
                           ref.invalidate(
                               factoryTripsProvider(selectedFactory!.id));
                           ref.invalidate(factoriesProvider);
+                        }
+                        if (widget.tripToEdit?.factoryId != null) {
+                          ref.invalidate(
+                              factoryTripsProvider(widget.tripToEdit!.factoryId!));
                         }
                         ref.invalidate(driversProvider);
                         ref.invalidate(busProvider);

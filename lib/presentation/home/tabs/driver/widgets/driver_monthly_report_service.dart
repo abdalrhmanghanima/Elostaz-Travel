@@ -1,4 +1,3 @@
-
 import 'package:elostaz_travel/domain/driver/entity/driver_advance_entity.dart';
 import 'package:elostaz_travel/domain/driver/entity/driver_entity.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
@@ -12,42 +11,52 @@ class DriverMonthlyReportService {
     required DriverEntity driver,
     required List<TripEntity> trips,
     List<DriverAdvanceEntity> advances = const [],
+    String? periodLabel,
+    String? typeFilterLabel,
   }) async {
     final now = DateTime.now();
 
-    // Monthly trips
-    final monthlyTrips = trips.where((trip) {
-      final date = trip.effectiveDate;
-      return date.year == now.year && date.month == now.month;
-    }).toList()
+    // Apply the selected operation type filter.
+    List<TripEntity> filteredTrips = trips;
+
+    if (typeFilterLabel != null && typeFilterLabel.isNotEmpty) {
+      if (typeFilterLabel == 'الرحلات') {
+        filteredTrips = trips.where((trip) => trip.isTrip).toList();
+      } else if (typeFilterLabel == 'السهرات') {
+        filteredTrips = trips.where((trip) => trip.isNightOuting).toList();
+      }
+    }
+
+    // If a period is explicitly supplied, use the supplied trips as-is.
+    // Otherwise keep the existing backward-compatible current-month behavior.
+    final reportTrips = periodLabel != null
+        ? [...filteredTrips]
+        : filteredTrips.where((trip) {
+            final date = trip.effectiveDate;
+            return date.year == now.year && date.month == now.month;
+          }).toList()
       ..sort((a, b) => b.effectiveDate.compareTo(a.effectiveDate));
 
-    final tripsCount = monthlyTrips.where((t) => t.isTrip).length;
-    final nightOutingsCount = monthlyTrips.where((t) => t.isNightOuting).length;
+    // The driver's total wage is calculated ONLY from the wages assigned
+    // to the individual trips in this report.
+    final totalDriverWages = reportTrips.fold<double>(
+      0,
+      (sum, trip) => sum + (trip.driverWage ?? 0),
+    );
 
-    // Monthly Advances
-    final monthlyAdvances = advances.where((advance) {
-      return advance.date.year == now.year && advance.date.month == now.month;
-    }).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
-
-    // Financial Totals (Unified)
-    final totalRevenue = monthlyTrips.fold<double>(
+    final totalRevenue = reportTrips.fold<double>(
       0,
       (sum, trip) => sum + trip.revenue,
     );
 
-    final totalExpenses = monthlyTrips.fold<double>(
+    final totalExpenses = reportTrips.fold<double>(
       0,
       (sum, trip) => sum + trip.expenses,
     );
 
     final totalNetRevenue = totalRevenue - totalExpenses;
 
-    final outstandingAdvances = advances
-        .where((a) => a.isActive)
-        .fold<double>(0, (sum, a) => sum + a.amount);
-
+    final tripCount = reportTrips.length;
 
     // Fonts
     final regularFont = pw.Font.ttf(
@@ -70,10 +79,13 @@ class DriverMonthlyReportService {
         pageFormat: PdfPageFormat.a4,
         theme: theme,
         textDirection: pw.TextDirection.rtl,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        margin: const pw.EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 18,
+        ),
         footer: (context) {
           return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 6),
+            margin: const pw.EdgeInsets.only(top: 8),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -86,7 +98,7 @@ class DriverMonthlyReportService {
                   ),
                 ),
                 pw.Text(
-                  'تقرير عمليات السائق — شركة الأستاذ للنقل السياحي',
+                  'تقرير رحلات السائق',
                   style: pw.TextStyle(
                     font: regularFont,
                     fontSize: 8,
@@ -98,9 +110,9 @@ class DriverMonthlyReportService {
           );
         },
         build: (context) {
-          final List<pw.Widget> widgets = [];
+          final widgets = <pw.Widget>[];
 
-          // Header
+          // Simple header.
           widgets.add(
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -110,16 +122,16 @@ class DriverMonthlyReportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'تقرير حساب وعمليات السائق',
+                      'تقرير رحلات السائق',
                       style: pw.TextStyle(
                         font: boldFont,
                         fontSize: 17,
                         color: PdfColors.blue900,
                       ),
                     ),
-                    pw.SizedBox(height: 2),
+                    pw.SizedBox(height: 3),
                     pw.Text(
-                      'شهر ${_monthName(now.month)} ${now.year}',
+                      'الفترة: ${_resolvePeriodLabel(periodLabel, now)}',
                       style: pw.TextStyle(
                         font: regularFont,
                         fontSize: 10,
@@ -144,7 +156,7 @@ class DriverMonthlyReportService {
                         'هاتف: ${driver.phone}',
                         style: pw.TextStyle(
                           font: regularFont,
-                          fontSize: 10,
+                          fontSize: 9,
                           color: PdfColors.grey700,
                         ),
                       ),
@@ -155,30 +167,37 @@ class DriverMonthlyReportService {
             ),
           );
 
-          widgets.add(pw.SizedBox(height: 10));
+          widgets.add(pw.SizedBox(height: 12));
 
-          // Summary KPIs
+          // Compact financial summary: all essential figures in one row.
           widgets.add(
             pw.Container(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              width: double.infinity,
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 7,
+              ),
               decoration: pw.BoxDecoration(
                 color: PdfColors.grey100,
                 borderRadius: pw.BorderRadius.circular(6),
-                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                border: pw.Border.all(
+                  color: PdfColors.grey300,
+                  width: 0.5,
+                ),
               ),
               child: pw.Row(
                 children: [
                   pw.Expanded(
                     child: _smallSummary(
-                      title: 'إجمالي العمليات',
-                      value: '${monthlyTrips.length} ($tripsCount رحلة + $nightOutingsCount سهرة)',
+                      title: 'الرحلات',
+                      value: '$tripCount',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
                   ),
                   pw.Expanded(
                     child: _smallSummary(
-                      title: 'إجمالي الإيراد',
+                      title: 'الإيراد',
                       value: '${totalRevenue.toStringAsFixed(0)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
@@ -186,7 +205,7 @@ class DriverMonthlyReportService {
                   ),
                   pw.Expanded(
                     child: _smallSummary(
-                      title: 'إجمالي المصروفات',
+                      title: 'المصروف',
                       value: '${totalExpenses.toStringAsFixed(0)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
@@ -194,7 +213,7 @@ class DriverMonthlyReportService {
                   ),
                   pw.Expanded(
                     child: _smallSummary(
-                      title: 'الصافي',
+                      title: 'صافي الإيراد',
                       value: '${totalNetRevenue.toStringAsFixed(0)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
@@ -202,8 +221,8 @@ class DriverMonthlyReportService {
                   ),
                   pw.Expanded(
                     child: _smallSummary(
-                      title: 'السلف المستحقة',
-                      value: '${outstandingAdvances.toStringAsFixed(0)} ج.م',
+                      title: 'أجر السائق',
+                      value: '${totalDriverWages.toStringAsFixed(0)} ج.م',
                       regularFont: regularFont,
                       boldFont: boldFont,
                     ),
@@ -213,14 +232,13 @@ class DriverMonthlyReportService {
             ),
           );
 
-          widgets.add(pw.SizedBox(height: 10));
+          widgets.add(pw.SizedBox(height: 14));
 
-          // Operations Section
           widgets.add(
-            _sectionTitle('تفاصيل العمليات والرحلات', boldFont),
+            _sectionTitle('تفاصيل الرحلات والمصروفات', boldFont),
           );
 
-          if (monthlyTrips.isEmpty) {
+          if (reportTrips.isEmpty) {
             widgets.add(
               pw.Container(
                 width: double.infinity,
@@ -231,8 +249,11 @@ class DriverMonthlyReportService {
                 ),
                 child: pw.Center(
                   child: pw.Text(
-                    'لا توجد رحلات أو سهرات مسجلة لهذا السائق خلال هذا الشهر',
-                    style: pw.TextStyle(font: regularFont, fontSize: 11),
+                    'لا توجد رحلات أو سهرات مسجلة لهذا السائق${periodLabel != null ? " خلال $periodLabel" : " خلال هذا الشهر"}',
+                    style: pw.TextStyle(
+                      font: regularFont,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ),
@@ -244,41 +265,39 @@ class DriverMonthlyReportService {
                   'النوع',
                   'التاريخ',
                   'الأتوبيس',
-                  'المصنع / الجهة',
-                  'التفاصيل وملاحظات المصروف',
+                  'تفاصيل الرحلة',
                   'الإيراد',
                   'المصروف',
-                  'الصافي',
+                  'صافي الإيراد',
+                  'أجر السائق',
+                  'تفاصيل المصروف',
                 ],
-                data: monthlyTrips.map((trip) {
-                  final net = trip.revenue - trip.expenses;
-                  final factoryLabel = (trip.factoryName != null && trip.factoryName!.trim().isNotEmpty)
-                      ? trip.factoryName!
-                      : '-';
-
-                  String details = trip.details.trim();
-                  if (trip.expenseDetails != null && trip.expenseDetails!.trim().isNotEmpty) {
-                    if (details.isNotEmpty) {
-                      details += '\n[مصروف: ${trip.expenseDetails!.trim()}]';
-                    } else {
-                      details = '[مصروف: ${trip.expenseDetails!.trim()}]';
-                    }
-                  }
-                  if (details.isEmpty) details = '-';
-
+                data: reportTrips.map((trip) {
                   final dateStr = trip.effectiveDate.year > 1970
                       ? _formatDate(trip.effectiveDate)
                       : 'غير محدد';
+
+                  final tripDetails = trip.details.trim().isNotEmpty
+                      ? trip.details.trim()
+                      : '-';
+
+                  final expenseDetails =
+                      trip.expenseDetails?.trim().isNotEmpty == true
+                          ? trip.expenseDetails!.trim()
+                          : '-';
+
+                  final driverWage = trip.driverWage ?? 0;
 
                   return [
                     trip.typeLabel,
                     dateStr,
                     trip.busName.isNotEmpty ? trip.busName : '-',
-                    factoryLabel,
-                    details,
+                    tripDetails,
                     '${trip.revenue.toStringAsFixed(0)} ج.م',
                     '${trip.expenses.toStringAsFixed(0)} ج.م',
-                    '${net.toStringAsFixed(0)} ج.م',
+                    '${(trip.revenue - trip.expenses).toStringAsFixed(0)} ج.م',
+                    '${driverWage.toStringAsFixed(0)} ج.م',
+                    expenseDetails,
                   ];
                 }).toList(),
                 headerStyle: pw.TextStyle(
@@ -298,99 +317,24 @@ class DriverMonthlyReportService {
                 ),
                 cellPadding: const pw.EdgeInsets.symmetric(
                   horizontal: 3,
-                  vertical: 3,
+                  vertical: 4,
                 ),
                 cellAlignment: pw.Alignment.center,
                 headerAlignment: pw.Alignment.center,
                 columnWidths: {
-                  0: const pw.FixedColumnWidth(40),
-                  1: const pw.FixedColumnWidth(50),
-                  2: const pw.FixedColumnWidth(60),
-                  3: const pw.FixedColumnWidth(60),
-                  4: const pw.FlexColumnWidth(2.5),
-                  5: const pw.FixedColumnWidth(45),
-                  6: const pw.FixedColumnWidth(45),
-                  7: const pw.FixedColumnWidth(45),
+                  0: const pw.FixedColumnWidth(34),
+                  1: const pw.FixedColumnWidth(44),
+                  2: const pw.FixedColumnWidth(48),
+                  3: pw.FlexColumnWidth(1.7),
+                  4: const pw.FixedColumnWidth(44),
+                  5: const pw.FixedColumnWidth(44),
+                  6: const pw.FixedColumnWidth(44),
+                  7: const pw.FixedColumnWidth(44),
+                  8: pw.FlexColumnWidth(1.4),
                 },
               ),
             );
           }
-
-          // Advances Section
-          if (monthlyAdvances.isNotEmpty) {
-            widgets.add(pw.SizedBox(height: 12));
-            widgets.add(_sectionTitle('سلف السائق خلال الشهر', boldFont));
-
-            widgets.add(
-              pw.TableHelper.fromTextArray(
-                headers: ['التاريخ', 'المبلغ', 'الحالة', 'البيان والتفاصيل'],
-                data: monthlyAdvances.map((adv) {
-                  return [
-                    _formatDate(adv.date),
-                    '${adv.amount.toStringAsFixed(0)} ج.م',
-                    adv.isActive ? 'مستحقة' : 'تم السداد',
-                    adv.note.isNotEmpty ? adv.note : '-',
-                  ];
-                }).toList(),
-                headerStyle: pw.TextStyle(font: boldFont, fontSize: 7.5),
-                cellStyle: pw.TextStyle(font: regularFont, fontSize: 7),
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                cellAlignment: pw.Alignment.center,
-                headerAlignment: pw.Alignment.center,
-                columnWidths: {
-                  0: const pw.FixedColumnWidth(60),
-                  1: const pw.FixedColumnWidth(60),
-                  2: const pw.FixedColumnWidth(60),
-                  3: const pw.FlexColumnWidth(2),
-                },
-              ),
-            );
-          }
-
-          // Final Settlement Summary
-          widgets.add(pw.SizedBox(height: 10));
-
-          widgets.add(
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius: pw.BorderRadius.circular(6),
-                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'إجمالي الإيرادات: ${totalRevenue.toStringAsFixed(0)} ج.م',
-                    style: pw.TextStyle(font: boldFont, fontSize: 8.5),
-                  ),
-                  pw.Text(
-                    'إجمالي المصروفات: ${totalExpenses.toStringAsFixed(0)} ج.م',
-                    style: pw.TextStyle(font: boldFont, fontSize: 8.5),
-                  ),
-                  pw.Text(
-                    'صافي العمليات: ${totalNetRevenue.toStringAsFixed(0)} ج.م',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 9.5,
-                      color: totalNetRevenue >= 0 ? PdfColors.green800 : PdfColors.red800,
-                    ),
-                  ),
-                  pw.Text(
-                    'السلف المستحقة: ${outstandingAdvances.toStringAsFixed(0)} ج.م',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 8.5,
-                      color: PdfColors.red800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
 
           return widgets;
         },
@@ -403,14 +347,17 @@ class DriverMonthlyReportService {
     );
   }
 
-  static pw.Widget _sectionTitle(String title, pw.Font boldFont) {
+  static pw.Widget _sectionTitle(
+    String title,
+    pw.Font boldFont,
+  ) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 5),
+      margin: const pw.EdgeInsets.only(bottom: 6),
       child: pw.Text(
         title,
         style: pw.TextStyle(
           font: boldFont,
-          fontSize: 10.5,
+          fontSize: 11,
           color: PdfColors.grey800,
         ),
       ),
@@ -439,7 +386,7 @@ class DriverMonthlyReportService {
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             font: boldFont,
-            fontSize: 9,
+            fontSize: 10,
           ),
         ),
       ],
@@ -447,16 +394,33 @@ class DriverMonthlyReportService {
   }
 
   static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
   }
 
-  // ==============================================================
-  // MONTH NAME
-  // ==============================================================
+  static String _resolvePeriodLabel(
+    String? periodLabel,
+    DateTime now,
+  ) {
+    if (periodLabel == 'الشهر الحالي') {
+      return 'شهر ${_monthName(now.month)} ${now.year}';
+    }
 
-  static String _monthName(
-      int month,
-      ) {
+    if (periodLabel == 'الشهر السابق') {
+      final previousMonth = DateTime(now.year, now.month - 1);
+      return 'شهر ${_monthName(previousMonth.month)} '
+          '${previousMonth.year}';
+    }
+
+    if (periodLabel == null || periodLabel.trim().isEmpty) {
+      return 'شهر ${_monthName(now.month)} ${now.year}';
+    }
+
+    return periodLabel;
+  }
+
+  static String _monthName(int month) {
     const months = [
       'يناير',
       'فبراير',

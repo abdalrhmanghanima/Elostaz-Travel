@@ -6,6 +6,7 @@ import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
 import 'package:elostaz_travel/presentation/components/custom_svg/custom_svg_icon.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_wage_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/home/financial_summary/provider/company_financial_summary_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/home/financial_summary/services/company_financial_report_service.dart';
 import 'package:elostaz_travel/presentation/home/tabs/trip/provider/trip_provider.dart';
@@ -26,9 +27,150 @@ class FinancialSummaryScreen extends ConsumerWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  String _formatCustomMonthLabel(DateTime date) {
+    const months = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
+  void _showMonthPicker(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    int selectedMonth = now.month;
+    int selectedYear = now.year;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final years = List.generate(
+              now.year - 2020 + 1,
+              (i) => 2020 + i,
+            ).reversed.toList();
+
+            const monthNames = [
+              'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+              'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+            ];
+
+            return Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomText(
+                    title: 'اختر الشهر والسنة',
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                    fontColor: AppColors.primary,
+                  ),
+                  SizedBox(height: 20.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: selectedMonth,
+                          decoration: InputDecoration(
+                            labelText: 'الشهر',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          items: List.generate(12, (i) {
+                            return DropdownMenuItem(
+                              value: i + 1,
+                              child: Text(monthNames[i]),
+                            );
+                          }),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() => selectedMonth = val);
+                            }
+                          },
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: selectedYear,
+                          decoration: InputDecoration(
+                            labelText: 'السنة',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          items: years.map((y) {
+                            return DropdownMenuItem(
+                              value: y,
+                              child: Text('$y'),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() => selectedYear = val);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: CustomText(
+                            title: 'إلغاء',
+                            fontColor: AppColors.gray,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          onPressed: () {
+                            final picked = DateTime(selectedYear, selectedMonth);
+                            if (picked.isAfter(now)) return;
+                            ref.read(selectedCustomMonthProvider.notifier).state =
+                                picked;
+                            ref.read(selectedFinancialPeriodProvider.notifier).state =
+                                FinancialPeriod.customMonth;
+                            Navigator.pop(ctx);
+                          },
+                          child: CustomText(
+                            title: 'تأكيد',
+                            fontColor: AppColors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedPeriod = ref.watch(selectedFinancialPeriodProvider);
+    final selectedCustomMonth = ref.watch(selectedCustomMonthProvider);
     final summaryAsync = ref.watch(companyFinancialSummaryProvider);
 
     return Scaffold(
@@ -50,8 +192,24 @@ class FinancialSummaryScreen extends ConsumerWidget {
                 : () async {
                     final summary = summaryAsync.valueOrNull;
                     if (summary != null) {
+                      String periodTitle;
+                      switch (summary.period) {
+                        case FinancialPeriod.currentMonth:
+                          periodTitle = 'الشهر الحالي';
+                          break;
+                        case FinancialPeriod.previousMonth:
+                          periodTitle = 'الشهر السابق';
+                          break;
+                        case FinancialPeriod.customMonth:
+                          periodTitle = summary.periodLabel;
+                          break;
+                        case FinancialPeriod.all:
+                          periodTitle = 'الكل';
+                          break;
+                      }
                       await CompanyFinancialReportService.shareCompanyReport(
                         summary: summary,
+                        periodTitle: periodTitle,
                       );
                     }
                   },
@@ -101,6 +259,21 @@ class FinancialSummaryScreen extends ConsumerWidget {
                         FinancialPeriod.currentMonth;
                   },
                 ),
+                SizedBox(width: 8.w),
+                _PeriodTabItem(
+                  title: selectedPeriod == FinancialPeriod.customMonth &&
+                          selectedCustomMonth != null
+                      ? _formatCustomMonthLabel(selectedCustomMonth)
+                      : FinancialPeriod.customMonth.title,
+                  isSelected: selectedPeriod == FinancialPeriod.customMonth,
+                  onTap: () {
+                    if (selectedPeriod == FinancialPeriod.customMonth &&
+                        selectedCustomMonth != null) {
+                      return;
+                    }
+                    _showMonthPicker(context, ref);
+                  },
+                ),
               ],
             ),
           ),
@@ -113,6 +286,7 @@ class FinancialSummaryScreen extends ConsumerWidget {
               onRefresh: () async {
                 ref.invalidate(monthlyTripsProvider);
                 ref.invalidate(allTripsProvider);
+                ref.invalidate(allDriverWagePaymentsProvider);
                 ref.invalidate(companyFinancialSummaryProvider);
                 await ref.read(companyFinancialSummaryProvider.future);
               },
@@ -401,6 +575,84 @@ class _CompanyTotalsCard extends StatelessWidget {
               ],
             ),
           ),
+          if (summary.totalDriverWages > 0) ...[
+            Divider(color: AppColors.backgroundGray, height: 2, thickness: 1.5),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      CustomText(title: "ج.م", fontSize: 13.sp, fontColor: const Color(0xFFB45309)),
+                      SizedBox(width: 4.w),
+                      CustomText(
+                        title: fmt(summary.totalDriverWages),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        fontColor: const Color(0xFFB45309),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      CustomText(
+                        title: "إجمالي أجور السائقين المستحقة",
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        fontColor: const Color(0xFF92400E),
+                      ),
+                      SizedBox(width: 6.w),
+                      Icon(
+                        Icons.badge_outlined,
+                        size: 16.sp,
+                        color: const Color(0xFFD97706),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (summary.totalDriverWagesPaid > 0) ...[
+            Divider(color: AppColors.backgroundGray, height: 2, thickness: 1.5),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      CustomText(title: "ج.م", fontSize: 13.sp, fontColor: AppColors.red),
+                      SizedBox(width: 4.w),
+                      CustomText(
+                        title: fmt(summary.totalDriverWagesPaid),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        fontColor: AppColors.red,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      CustomText(
+                        title: "أجور السائقين المسددة (المدفوعة)",
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        fontColor: AppColors.red,
+                      ),
+                      SizedBox(width: 6.w),
+                      Icon(
+                        Icons.payments_outlined,
+                        size: 16.sp,
+                        color: AppColors.red,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
           Divider(color: AppColors.backgroundGray, height: 2, thickness: 1.5),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -590,7 +842,6 @@ class _BusGroupCard extends StatelessWidget {
                             ),
                           ),
 
-
                           // المصروف - في المنتصف
                           Expanded(
                             child: _TripFinancialItem(
@@ -615,6 +866,50 @@ class _BusGroupCard extends StatelessWidget {
                         ],
                       ),
                     ),
+
+                    // Driver Wage if entered
+                    if (trip.driverWage != null && trip.driverWage! > 0) ...[
+                      SizedBox(height: 6.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(6.r),
+                          border: Border.all(color: const Color(0xFFFDE68A), width: 0.8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${fmt(trip.driverWage!)} ج.م',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFB45309),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  'أجر السائق (مستحق)',
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF92400E),
+                                  ),
+                                ),
+                                SizedBox(width: 4.w),
+                                Icon(
+                                  Icons.badge_outlined,
+                                  size: 13.sp,
+                                  color: const Color(0xFFD97706),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               );
@@ -640,101 +935,131 @@ class _BusGroupCard extends StatelessWidget {
                 ),
               ),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // صافي الأتوبيس
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                Row(
+                  children: [
+                    // صافي الأتوبيس
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'صافي الأتوبيس',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.darkGray,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            '${fmt(group.busNet)} ج.م',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.bold,
+                              color: group.busNet >= 0
+                                  ? AppColors.green
+                                  : AppColors.red,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(width: 8.w),
+
+                    // المصروف
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'المصروف',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: AppColors.darkGray,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            '${fmt(group.busExpenses)} ج.م',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.red,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(width: 8.w),
+
+                    // الإيراد
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'الإيراد',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: AppColors.darkGray,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            '${fmt(group.busRevenue)} ج.م',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.black,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (group.busDriverWages > 0) ...[
+                  SizedBox(height: 6.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'صافي الأتوبيس',
+                        '${fmt(group.busDriverWages)} ج.م',
                         style: TextStyle(
-                          fontSize: 11.sp,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.darkGray,
+                          color: const Color(0xFFB45309),
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(width: 6.w),
                       Text(
-                        '${fmt(group.busNet)} ج.م',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.bold,
-                          color: group.busNet >= 0
-                              ? AppColors.green
-                              : AppColors.red,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(width: 8.w),
-
-                // المصروف
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'المصروف',
+                        'أجور السائقين للأتوبيس:',
                         style: TextStyle(
                           fontSize: 11.sp,
-                          color: AppColors.darkGray,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        '${fmt(group.busExpenses)} ج.م',
-                        style: TextStyle(
-                          fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.red,
+                          color: const Color(0xFF92400E),
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ),
-
-                SizedBox(width: 8.w),
-
-                // الإيراد
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'الإيراد',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: AppColors.darkGray,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        '${fmt(group.busRevenue)} ج.م',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.black,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ],
             ),
           )
