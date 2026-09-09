@@ -77,6 +77,138 @@ class _FakeTripRepository implements TripRepository {
     }).toList();
   }
 
+  @override
+  Future<List<TripEntity>> getBusTripsLimited(String busId, int limit) async =>
+      _store.values.where((t) => t.busId == busId).take(limit).toList();
+
+  @override
+  Future<List<TripEntity>> getDriverTripsLimited(
+          String driverId, int limit) async =>
+      _store.values.where((t) => t.driverId == driverId).take(limit).toList();
+
+  @override
+  Future<List<TripEntity>> getFactoryTripsLimited(
+          String factoryId, int limit) async =>
+      _store.values.where((t) => t.factoryId == factoryId).take(limit).toList();
+
+  @override
+  Future<PaginatedTripsResult> getBusTripsPaginated(
+    String busId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  ) async {
+    return _paginate(_store.values.where((t) => t.busId == busId), limit, filter);
+  }
+
+  @override
+  Future<PaginatedTripsResult> getDriverTripsPaginated(
+    String driverId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  ) async {
+    return _paginate(
+        _store.values.where((t) => t.driverId == driverId), limit, filter);
+  }
+
+  @override
+  Future<PaginatedTripsResult> getFactoryTripsPaginated(
+    String factoryId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  ) async {
+    return _paginate(
+        _store.values.where((t) => t.factoryId == factoryId), limit, filter);
+  }
+
+  @override
+  Future<List<TripEntity>> getBusTripsForReport(
+    String busId,
+    TripListFilter filter,
+  ) async {
+    return _allFiltered(_store.values.where((t) => t.busId == busId), filter);
+  }
+
+  @override
+  Future<List<TripEntity>> getDriverTripsForReport(
+    String driverId,
+    TripListFilter filter,
+  ) async {
+    return _allFiltered(
+        _store.values.where((t) => t.driverId == driverId), filter);
+  }
+
+  @override
+  Future<List<TripEntity>> getFactoryTripsForReport(
+    String factoryId,
+    TripListFilter filter,
+  ) async {
+    return _allFiltered(
+        _store.values.where((t) => t.factoryId == factoryId), filter);
+  }
+
+  List<TripEntity> _allFiltered(
+    Iterable<TripEntity> source,
+    TripListFilter filter,
+  ) {
+    return source
+        .where((t) {
+          if (filter.startDate != null &&
+              t.createdAt.isBefore(filter.startDate!)) {
+            return false;
+          }
+          if (filter.endDate != null &&
+              !t.createdAt.isBefore(filter.endDate!)) {
+            return false;
+          }
+          if (filter.recordType == TripType.nightOuting && !t.isNightOuting) {
+            return false;
+          }
+          if (filter.recordType == TripType.trip && !t.isTrip) {
+            return false;
+          }
+          return true;
+        })
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  PaginatedTripsResult _paginate(
+    Iterable<TripEntity> source,
+    int limit,
+    TripListFilter filter,
+  ) {
+    final matching = source
+        .where((t) {
+          if (filter.startDate != null &&
+              t.createdAt.isBefore(filter.startDate!)) {
+            return false;
+          }
+          if (filter.endDate != null &&
+              !t.createdAt.isBefore(filter.endDate!)) {
+            return false;
+          }
+          if (filter.recordType == TripType.nightOuting && !t.isNightOuting) {
+            return false;
+          }
+          if (filter.recordType == TripType.trip && !t.isTrip) {
+            return false;
+          }
+          return true;
+        })
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final page = matching.take(limit).toList();
+    return PaginatedTripsResult(
+      trips: page,
+      lastDocument: null,
+      hasMore: matching.length > limit,
+    );
+  }
+
   int get count => _store.length;
   Iterable<String> get ids => _store.keys;
 }

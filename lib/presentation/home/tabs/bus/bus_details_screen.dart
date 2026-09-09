@@ -50,7 +50,7 @@ class BusDetailsScreen extends ConsumerWidget {
     final localBusImage = localImagesAsync.valueOrNull?.busImage;
     final localLicenseImage = localImagesAsync.valueOrNull?.licenseImage;
 
-    final tripsState = ref.watch(busTripsProvider(currentBus.id!));
+    final tripsState = ref.watch(busTripsLimitedProvider(currentBus.id!));
     final bool isLicenseValid =
         currentBus.licenseExpiryDate.isAfter(DateTime.now());
     final driversState = ref.watch(driversProvider);
@@ -222,7 +222,7 @@ class BusDetailsScreen extends ConsumerWidget {
           await Future.wait([
             ref.read(busProvider.notifier).refreshBuses(),
             if (currentBus.id != null)
-              ref.refresh(busTripsProvider(currentBus.id!).future),
+              ref.refresh(busTripsLimitedProvider(currentBus.id!).future),
             if (currentBus.id != null)
               ref.refresh(busLocalImagesProvider(currentBus.id!).future),
           ]);
@@ -924,17 +924,15 @@ class BusDetailsScreen extends ConsumerWidget {
                       );
                     }
 
-                    final displayedTrips = trips.take(3).toList();
-
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: displayedTrips.length,
+                          itemCount: trips.length,
                           itemBuilder: (context, index) {
-                            final trip = displayedTrips[index];
+                            final trip = trips[index];
 
                             return TripCard(
                               trip: trip,

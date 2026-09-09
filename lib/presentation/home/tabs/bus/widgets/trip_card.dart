@@ -12,6 +12,7 @@ import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_pro
 import 'package:elostaz_travel/presentation/home/tabs/factory/provider/factory_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/add_factory_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
+import 'package:elostaz_travel/presentation/trip/provider/paginated_trips_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -130,14 +131,35 @@ class TripCard extends ConsumerWidget {
                     ref.invalidate(
                       busTripsProvider(busId!),
                     );
+                    ref.invalidate(
+                      busTripsLimitedProvider(busId!),
+                    );
+                    ref.invalidate(
+                      busPaginatedTripsProvider(
+                          PaginatedTripsRequest(entityId: busId!)),
+                    );
                   } else if (trip.busId.isNotEmpty) {
                     ref.invalidate(
                       busTripsProvider(trip.busId),
+                    );
+                    ref.invalidate(
+                      busTripsLimitedProvider(trip.busId),
+                    );
+                    ref.invalidate(
+                      busPaginatedTripsProvider(
+                          PaginatedTripsRequest(entityId: trip.busId)),
                     );
                   }
 
                   ref.invalidate(
                     driverTripsProvider(trip.driverId),
+                  );
+                  ref.invalidate(
+                    driverTripsLimitedProvider(trip.driverId),
+                  );
+                  ref.invalidate(
+                    driverPaginatedTripsProvider(
+                        PaginatedTripsRequest(entityId: trip.driverId)),
                   );
 
                   ref.invalidate(
@@ -147,6 +169,13 @@ class TripCard extends ConsumerWidget {
                   if (trip.factoryId != null && trip.factoryId!.isNotEmpty) {
                     ref.invalidate(
                       factoryTripsProvider(trip.factoryId!),
+                    );
+                    ref.invalidate(
+                      factoryTripsLimitedProvider(trip.factoryId!),
+                    );
+                    ref.invalidate(
+                      factoryPaginatedTripsProvider(
+                          PaginatedTripsRequest(entityId: trip.factoryId!)),
                     );
                     ref.invalidate(
                       factoriesProvider,

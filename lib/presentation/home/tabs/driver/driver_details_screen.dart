@@ -127,7 +127,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
       }
     }
 
-    final tripsState = ref.watch(driverTripsProvider(currentDriver.id));
+    final tripsState = ref.watch(driverTripsLimitedProvider(currentDriver.id));
     final advancesState = ref.watch(driverAdvancesProvider(currentDriver.id));
     final wageEntriesState =
     ref.watch(driverWageEntriesProvider(currentDriver.id));
@@ -180,7 +180,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
         onRefresh: () async {
           await Future.wait([
             ref.read(driversProvider.notifier).getDrivers(),
-            ref.refresh(driverTripsProvider(currentDriver.id).future),
+            ref.refresh(driverTripsLimitedProvider(currentDriver.id).future),
             ref.refresh(driverAdvancesProvider(currentDriver.id).future),
             ref.refresh(driverWageEntriesProvider(currentDriver.id).future),
             ref.refresh(driverWagePaymentsProvider(currentDriver.id).future),

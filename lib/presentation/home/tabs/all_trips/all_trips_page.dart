@@ -7,6 +7,7 @@ import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/domain/driver/entity/driver_entity.dart';
 import 'package:elostaz_travel/domain/factory/entity/factory_entity.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
+import 'package:elostaz_travel/domain/trip/repository/trip_repository.dart';
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_info_card.dart';
@@ -14,7 +15,7 @@ import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/bus_monthly_re
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/driver_monthly_report_service.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/factory_monthly_report_service.dart';
-import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
+import 'package:elostaz_travel/presentation/trip/provider/paginated_trips_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -79,20 +80,7 @@ class _AllTripsPageState extends ConsumerState<AllTripsPage> {
         actions: [
           IconButton(
             tooltip: 'مشاركة التقرير PDF',
-            onPressed: tripsState.hasValue
-                ? () {
-                    final allTrips = tripsState.value!;
-                    final filtered = _applyFilters(
-                      allTrips,
-                      selectedPeriod,
-                      selectedRecordType,
-                      customMonth,
-                    );
-                    if (filtered.isEmpty) return;
-                    _printReport(filtered, selectedPeriod, selectedRecordType,
-                        customMonth);
-                  }
-                : null,
+            onPressed: () => _generateReport(),
             icon: Icon(
               Icons.print_outlined,
               color: AppColors.white,
@@ -106,149 +94,170 @@ class _AllTripsPageState extends ConsumerState<AllTripsPage> {
         color: AppColors.primary,
         backgroundColor: AppColors.white,
         onRefresh: () async {
-          _invalidateTrips();
-          await _readTripsFuture();
+          _refreshTrips();
         },
-        child: tripsState.when(
-          loading: () => const Center(child: CustomLoading()),
-          error: (error, stackTrace) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              SizedBox(height: 150.h),
-              Center(
-                child: CustomText(
-                  title: 'حدث خطأ في تحميل الرحلات',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          data: (trips) {
-            final periodFiltered = _applyPeriodFilter(
-              trips,
-              selectedPeriod,
-              customMonth,
-            );
-
-            final filtered = _applyTypeFilter(
-              periodFiltered,
-              selectedRecordType,
-            );
-
-            return Column(
-              children: [
-                if (widget.entity is BusEntity)
-                  BusInfoCard(bus: widget.entity as BusEntity),
-
-                _buildPeriodFilter(selectedPeriod, customMonth),
-                _buildTypeFilter(periodFiltered, selectedRecordType),
-
-                Expanded(
-                  child: filtered.isEmpty
-                      ? _buildEmptyState(selectedRecordType)
-                      : _buildTripsList(filtered),
-                ),
-              ],
-            );
-          },
-        ),
+        child: _buildBody(tripsState, selectedPeriod, selectedRecordType, customMonth),
       ),
     );
   }
 
-  AsyncValue<List<TripEntity>> _watchTrips() {
+  Widget _buildBody(
+    PaginatedTripsState tripsState,
+    AllTripsPeriodType selectedPeriod,
+    AllTripsRecordType selectedRecordType,
+    DateTime? customMonth,
+  ) {
+    if (tripsState.isInitialLoading) {
+      return const Center(child: CustomLoading());
+    }
+
+    if (tripsState.error != null && tripsState.trips.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: 150.h),
+          Center(
+            child: CustomText(
+              title: 'حدث خطأ في تحميل الرحلات',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // The trip list is already filtered server-side by the active period and
+    // record type, so we render the paginated result set directly.
+    final trips = tripsState.trips;
+
+    return Column(
+      children: [
+        if (widget.entity is BusEntity)
+          BusInfoCard(bus: widget.entity as BusEntity),
+
+        _buildPeriodFilter(selectedPeriod, customMonth),
+        _buildTypeFilter(trips, selectedRecordType),
+
+        Expanded(
+          child: trips.isEmpty && !tripsState.isLoadingMore
+              ? _buildEmptyState(selectedRecordType)
+              : _buildTripsList(trips, tripsState),
+        ),
+      ],
+    );
+  }
+
+  /// Builds the active page request (entity id + server-side filter) from the
+  /// currently selected period/record type/month.
+  PaginatedTripsRequest _buildRequest() {
+    final filter = _buildFilter(
+      ref.read(_selectedPeriodProvider),
+      ref.read(_selectedRecordTypeProvider),
+      ref.read(_selectedCustomMonthProvider),
+    );
+    return PaginatedTripsRequest(entityId: _entityId(), filter: filter);
+  }
+
+  String _entityId() {
     final entity = widget.entity;
     if (entity is BusEntity) {
-      return ref.watch(busTripsProvider(entity.id!));
+      return entity.id!;
     } else if (entity is DriverEntity) {
-      return ref.watch(driverTripsProvider(entity.id));
+      return entity.id;
     } else if (entity is FactoryEntity) {
-      return ref.watch(factoryTripsProvider(entity.id));
+      return entity.id;
     }
     throw ArgumentError('Unsupported entity type: ${entity.runtimeType}');
   }
 
-  void _invalidateTrips() {
-    final entity = widget.entity;
-    if (entity is BusEntity) {
-      ref.invalidate(busTripsProvider(entity.id!));
-    } else if (entity is DriverEntity) {
-      ref.invalidate(driverTripsProvider(entity.id));
-    } else if (entity is FactoryEntity) {
-      ref.invalidate(factoryTripsProvider(entity.id));
-    }
-  }
-
-  Future<void> _readTripsFuture() async {
-    final entity = widget.entity;
-    if (entity is BusEntity) {
-      await ref.read(busTripsProvider(entity.id!).future);
-    } else if (entity is DriverEntity) {
-      await ref.read(driverTripsProvider(entity.id).future);
-    } else if (entity is FactoryEntity) {
-      await ref.read(factoryTripsProvider(entity.id).future);
-    }
-  }
-
-  List<TripEntity> _applyPeriodFilter(
-    List<TripEntity> trips,
+  /// Translates the selected period + custom month into a Firestore date range
+  /// (half-open: [start, end)).
+  (DateTime, DateTime)? _buildDateRange(
     AllTripsPeriodType period,
     DateTime? customMonth,
   ) {
     final now = DateTime.now();
-
+    DateTime start;
     switch (period) {
-      case AllTripsPeriodType.currentMonth:
-        return trips.where((t) {
-          final d = t.effectiveDate;
-          return d.year == now.year && d.month == now.month;
-        }).toList();
-      case AllTripsPeriodType.previousMonth:
-        final prevMonth = now.month == 1 ? 12 : now.month - 1;
-        final prevYear = now.month == 1 ? now.year - 1 : now.year;
-        return trips.where((t) {
-          final d = t.effectiveDate;
-          return d.year == prevYear && d.month == prevMonth;
-        }).toList();
-      case AllTripsPeriodType.customMonth:
-        if (customMonth != null) {
-          return trips.where((t) {
-            final d = t.effectiveDate;
-            return d.year == customMonth.year &&
-                d.month == customMonth.month;
-          }).toList();
-        }
-        return List.from(trips);
       case AllTripsPeriodType.all:
-        return List.from(trips);
+        return null;
+      case AllTripsPeriodType.currentMonth:
+        start = DateTime(now.year, now.month, 1);
+        break;
+      case AllTripsPeriodType.previousMonth:
+        start = now.month == 1
+            ? DateTime(now.year - 1, 12, 1)
+            : DateTime(now.year, now.month - 1, 1);
+        break;
+      case AllTripsPeriodType.customMonth:
+        if (customMonth == null) return null;
+        start = DateTime(customMonth.year, customMonth.month, 1);
+        break;
     }
+    final end = DateTime(start.year, start.month + 1, 1);
+    return (start, end);
   }
 
-  List<TripEntity> _applyTypeFilter(
-    List<TripEntity> trips,
-    AllTripsRecordType recordType,
-  ) {
-    switch (recordType) {
-      case AllTripsRecordType.trips:
-        return trips.where((t) => t.isTrip).toList();
-      case AllTripsRecordType.nightOutings:
-        return trips.where((t) => t.isNightOuting).toList();
-      case AllTripsRecordType.all:
-        return trips;
-    }
-  }
-
-  List<TripEntity> _applyFilters(
-    List<TripEntity> trips,
+  /// Builds the server-side filter used for the paginated query.
+  TripListFilter _buildFilter(
     AllTripsPeriodType period,
     AllTripsRecordType recordType,
     DateTime? customMonth,
   ) {
-    return _applyTypeFilter(
-      _applyPeriodFilter(trips, period, customMonth),
-      recordType,
+    final range = _buildDateRange(period, customMonth);
+
+    String? recordTypeValue;
+    switch (recordType) {
+      case AllTripsRecordType.trips:
+        recordTypeValue = TripType.trip;
+        break;
+      case AllTripsRecordType.nightOutings:
+        recordTypeValue = TripType.nightOuting;
+        break;
+      case AllTripsRecordType.all:
+        recordTypeValue = null;
+        break;
+    }
+
+    return TripListFilter(
+      startDate: range?.$1,
+      endDate: range?.$2,
+      recordType: recordTypeValue,
     );
+  }
+
+  PaginatedTripsState _watchTrips() {
+    final entity = widget.entity;
+    if (entity is BusEntity) {
+      return ref.watch(busPaginatedTripsProvider(_buildRequest()));
+    } else if (entity is DriverEntity) {
+      return ref.watch(driverPaginatedTripsProvider(_buildRequest()));
+    } else if (entity is FactoryEntity) {
+      return ref.watch(factoryPaginatedTripsProvider(_buildRequest()));
+    }
+    throw ArgumentError('Unsupported entity type: ${entity.runtimeType}');
+  }
+
+  PaginatedTripsNotifier<PaginatedTripsRequest> _notifier() {
+    final entity = widget.entity;
+    final request = _buildRequest();
+    if (entity is BusEntity) {
+      return ref.read(busPaginatedTripsProvider(request).notifier);
+    } else if (entity is DriverEntity) {
+      return ref.read(driverPaginatedTripsProvider(request).notifier);
+    } else if (entity is FactoryEntity) {
+      return ref.read(factoryPaginatedTripsProvider(request).notifier);
+    }
+    throw ArgumentError('Unsupported entity type: ${entity.runtimeType}');
+  }
+
+  void _loadMore() {
+    _notifier().loadMore();
+  }
+
+  void _refreshTrips() {
+    _notifier().refresh();
   }
 
   Widget _buildPeriodFilter(AllTripsPeriodType selected, DateTime? customMonth) {
@@ -471,22 +480,55 @@ class _AllTripsPageState extends ConsumerState<AllTripsPage> {
     );
   }
 
-  Widget _buildTripsList(List<TripEntity> trips) {
+  Widget _buildTripsList(List<TripEntity> trips, PaginatedTripsState tripsState) {
     final entity = widget.entity;
     String? busId;
     if (entity is BusEntity) {
       busId = entity.id;
     }
 
+    final showBus = entity is DriverEntity || entity is FactoryEntity;
+
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
-      itemCount: trips.length,
+      itemCount: trips.length + 1,
       itemBuilder: (context, index) {
+        if (index == trips.length) {
+          if (tripsState.isLoadingMore) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            );
+          }
+          if (!tripsState.hasMore) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              child: Center(
+                child: CustomText(
+                  title: 'لا توجد رحلات أخرى',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  fontColor: const Color(0xFF999999),
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }
+
+        final trip = trips[index];
+
+        if (index >= trips.length - 3) {
+          _loadMore();
+        }
+
         return TripCard(
-          trip: trips[index],
+          trip: trip,
           busId: busId,
-          showBus: entity is DriverEntity || entity is FactoryEntity,
+          showBus: showBus,
         );
       },
     );
@@ -633,6 +675,60 @@ class _AllTripsPageState extends ConsumerState<AllTripsPage> {
         );
       },
     );
+  }
+
+  /// Fetches ALL matching trips from Firestore (independent of UI pagination)
+  /// and generates the PDF report for the currently selected filters.
+  Future<void> _generateReport() async {
+    final request = _buildRequest();
+    final selectedPeriod = ref.read(_selectedPeriodProvider);
+    final selectedRecordType = ref.read(_selectedRecordTypeProvider);
+    final customMonth = ref.read(_selectedCustomMonthProvider);
+
+    final provider = _reportProviderFor(request);
+    if (provider == null) return;
+
+    try {
+      final allTrips = await ref.read(provider(request).future);
+      if (!mounted) return;
+
+      if (allTrips.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('لا توجد رحلات مطابقة للتقرير'),
+          ),
+        );
+        return;
+      }
+
+      _printReport(
+        allTrips,
+        selectedPeriod,
+        selectedRecordType,
+        customMonth,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('حدث خطأ أثناء تجهيز التقرير'),
+        ),
+      );
+    }
+  }
+
+  /// Returns the report FutureProvider family matching [request]'s entity.
+  FutureProviderFamily<List<TripEntity>, PaginatedTripsRequest>?
+      _reportProviderFor(PaginatedTripsRequest request) {
+    final entity = widget.entity;
+    if (entity is BusEntity) {
+      return busTripsForReportProvider;
+    } else if (entity is DriverEntity) {
+      return driverTripsForReportProvider;
+    } else if (entity is FactoryEntity) {
+      return factoryTripsForReportProvider;
+    }
+    return null;
   }
 
   void _printReport(

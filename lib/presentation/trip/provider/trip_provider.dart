@@ -15,6 +15,15 @@ import 'package:elostaz_travel/domain/trip/use_case/delete_trip_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_limited_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_limited_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_limited_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_paginated_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_paginated_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_paginated_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_for_report_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_for_report_use_case.dart';
+import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_for_report_use_case.dart';
 
 final tripRemoteDataSourceProvider =
 Provider<TripRemoteDataSource>((ref) {
@@ -65,6 +74,69 @@ Provider<GetDriverTripsUseCase>((ref) {
 final getFactoryTripsUseCaseProvider =
 Provider<GetFactoryTripsUseCase>((ref) {
   return GetFactoryTripsUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getBusTripsLimitedUseCaseProvider =
+Provider<GetBusTripsLimitedUseCase>((ref) {
+  return GetBusTripsLimitedUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getDriverTripsLimitedUseCaseProvider =
+Provider<GetDriverTripsLimitedUseCase>((ref) {
+  return GetDriverTripsLimitedUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getFactoryTripsLimitedUseCaseProvider =
+Provider<GetFactoryTripsLimitedUseCase>((ref) {
+  return GetFactoryTripsLimitedUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getBusTripsPaginatedUseCaseProvider =
+Provider<GetBusTripsPaginatedUseCase>((ref) {
+  return GetBusTripsPaginatedUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getDriverTripsPaginatedUseCaseProvider =
+Provider<GetDriverTripsPaginatedUseCase>((ref) {
+  return GetDriverTripsPaginatedUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getFactoryTripsPaginatedUseCaseProvider =
+    Provider<GetFactoryTripsPaginatedUseCase>((ref) {
+  return GetFactoryTripsPaginatedUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getBusTripsForReportUseCaseProvider =
+    Provider<GetBusTripsForReportUseCase>((ref) {
+  return GetBusTripsForReportUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getDriverTripsForReportUseCaseProvider =
+    Provider<GetDriverTripsForReportUseCase>((ref) {
+  return GetDriverTripsForReportUseCase(
+    repository: ref.read(tripRepositoryProvider),
+  );
+});
+
+final getFactoryTripsForReportUseCaseProvider =
+    Provider<GetFactoryTripsForReportUseCase>((ref) {
+  return GetFactoryTripsForReportUseCase(
     repository: ref.read(tripRepositoryProvider),
   );
 });
@@ -139,5 +211,33 @@ FutureProvider.family<List<TripEntity>, String>(
     return ref
         .read(getFactoryTripsUseCaseProvider)
         .call(factoryId);
+  },
+);
+
+// Limited trips providers (for details pages - 3 trips)
+final busTripsLimitedProvider =
+FutureProvider.family<List<TripEntity>, String>(
+      (ref, busId) {
+    return ref
+        .read(getBusTripsLimitedUseCaseProvider)
+        .call(busId, limit: 3);
+  },
+);
+
+final driverTripsLimitedProvider =
+FutureProvider.family<List<TripEntity>, String>(
+      (ref, driverId) {
+    return ref
+        .read(getDriverTripsLimitedUseCaseProvider)
+        .call(driverId, limit: 3);
+  },
+);
+
+final factoryTripsLimitedProvider =
+FutureProvider.family<List<TripEntity>, String>(
+      (ref, factoryId) {
+    return ref
+        .read(getFactoryTripsLimitedUseCaseProvider)
+        .call(factoryId, limit: 3);
   },
 );

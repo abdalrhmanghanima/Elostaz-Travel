@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elostaz_travel/data/trip/data_source/trip_remote_data_source.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:elostaz_travel/data/trip/model/trip_model.dart';
+import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
+import 'package:elostaz_travel/domain/trip/repository/trip_repository.dart'
+    show TripListFilter;
 
 class TripRemoteDataSourceImpl implements TripRemoteDataSource {
   final FirebaseFirestore firestore;
@@ -357,5 +360,271 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       print(stackTrace);
       rethrow;
     }
+  }
+
+  @override
+  Future<List<TripModel>> getBusTripsLimited(String busId, int limit) async {
+    try {
+      final snapshot = await _trips()
+          .where('busId', isEqualTo: busId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+    } catch (e, stackTrace) {
+      print('BUS TRIPS LIMITED ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<TripModel>> getDriverTripsLimited(String driverId, int limit) async {
+    try {
+      final snapshot = await _trips()
+          .where('driverId', isEqualTo: driverId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+    } catch (e, stackTrace) {
+      print('DRIVER TRIPS LIMITED ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<TripModel>> getFactoryTripsLimited(String factoryId, int limit) async {
+    try {
+      final snapshot = await _trips()
+          .where('factoryId', isEqualTo: factoryId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+    } catch (e, stackTrace) {
+      print('FACTORY TRIPS LIMITED ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<PaginatedTripsResult> getBusTripsPaginated(
+    String busId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  ) async {
+    try {
+      Query<Map<String, dynamic>> query =
+          _applyFilter(_trips().where('busId', isEqualTo: busId), filter)
+              .orderBy('createdAt', descending: true)
+              .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      final trips = snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+
+      final lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+      final hasMore = snapshot.docs.length == limit;
+
+      return PaginatedTripsResult(
+        trips: trips,
+        lastDocument: lastDoc,
+        hasMore: hasMore,
+      );
+    } catch (e, stackTrace) {
+      print('BUS TRIPS PAGINATED ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<PaginatedTripsResult> getDriverTripsPaginated(
+    String driverId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  ) async {
+    try {
+      Query<Map<String, dynamic>> query =
+          _applyFilter(_trips().where('driverId', isEqualTo: driverId), filter)
+              .orderBy('createdAt', descending: true)
+              .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      final trips = snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+
+      final lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+      final hasMore = snapshot.docs.length == limit;
+
+      return PaginatedTripsResult(
+        trips: trips,
+        lastDocument: lastDoc,
+        hasMore: hasMore,
+      );
+    } catch (e, stackTrace) {
+      print('DRIVER TRIPS PAGINATED ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<PaginatedTripsResult> getFactoryTripsPaginated(
+    String factoryId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  ) async {
+    try {
+      Query<Map<String, dynamic>> query =
+          _applyFilter(_trips().where('factoryId', isEqualTo: factoryId), filter)
+              .orderBy('createdAt', descending: true)
+              .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      final trips = snapshot.docs
+          .map((doc) => TripModel.fromFirestore(doc))
+          .toList();
+
+      final lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+      final hasMore = snapshot.docs.length == limit;
+
+      return PaginatedTripsResult(
+        trips: trips,
+        lastDocument: lastDoc,
+        hasMore: hasMore,
+      );
+    } catch (e, stackTrace) {
+      print('FACTORY TRIPS PAGINATED ERROR: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Batch size used internally when collecting all documents for the
+  /// print/report flow. This is independent of UI pagination.
+  static const int _reportBatchSize = 200;
+
+  @override
+  Future<List<TripModel>> getBusTripsForReport(
+    String busId,
+    TripListFilter filter,
+  ) {
+    return _fetchAllFiltered(_trips().where('busId', isEqualTo: busId), filter);
+  }
+
+  @override
+  Future<List<TripModel>> getDriverTripsForReport(
+    String driverId,
+    TripListFilter filter,
+  ) {
+    return _fetchAllFiltered(
+        _trips().where('driverId', isEqualTo: driverId), filter);
+  }
+
+  @override
+  Future<List<TripModel>> getFactoryTripsForReport(
+    String factoryId,
+    TripListFilter filter,
+  ) {
+    return _fetchAllFiltered(
+        _trips().where('factoryId', isEqualTo: factoryId), filter);
+  }
+
+  /// Collects every document matching [base] + [filter] by repeatedly fetching
+  /// [_reportBatchSize] documents and advancing with [startAfterDocument],
+  /// stopping once a batch returns fewer than the batch size (no more matches).
+  Future<List<TripModel>> _fetchAllFiltered(
+    Query<Map<String, dynamic>> base,
+    TripListFilter filter,
+  ) async {
+    final all = <TripModel>[];
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+
+    while (true) {
+      Query<Map<String, dynamic>> query = _applyFilter(base, filter)
+          .orderBy('createdAt', descending: true)
+          .limit(_reportBatchSize);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) break;
+
+      all.addAll(snapshot.docs.map((doc) => TripModel.fromFirestore(doc)));
+      lastDocument = snapshot.docs.last;
+
+      if (snapshot.docs.length < _reportBatchSize) break;
+    }
+
+    return all;
+  }
+
+  /// Applies the server-side [TripListFilter] to [query].
+  ///
+  /// Date filtering uses the always-present `createdAt` field (the same field
+  /// used by [getMonthlyTrips]), and record-type filtering uses the stored
+  /// `type` field.
+  Query<Map<String, dynamic>> _applyFilter(
+    Query<Map<String, dynamic>> query,
+    TripListFilter filter,
+  ) {
+    Query<Map<String, dynamic>> result = query;
+
+    if (filter.startDate != null) {
+      result = result.where(
+        'createdAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(filter.startDate!),
+      );
+    }
+    if (filter.endDate != null) {
+      result = result.where(
+        'createdAt',
+        isLessThan: Timestamp.fromDate(filter.endDate!),
+      );
+    }
+    if (filter.recordType != null) {
+      if (filter.recordType == TripType.nightOuting) {
+        result = result.where('type', whereIn: [
+          TripType.nightOuting,
+          'sahra',
+        ]);
+      } else {
+        result = result.where('type', isEqualTo: filter.recordType);
+      }
+    }
+
+    return result;
   }
 }

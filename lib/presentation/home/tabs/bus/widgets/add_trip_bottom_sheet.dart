@@ -12,6 +12,7 @@ import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.
 import 'package:elostaz_travel/presentation/home/tabs/driver/provider/driver_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/provider/factory_provider.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
+import 'package:elostaz_travel/presentation/trip/provider/paginated_trips_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -746,18 +747,37 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                       if (success) {
                         ref.invalidate(busTripsProvider(widget.bus.id ?? ''));
+                        ref.invalidate(busTripsLimitedProvider(widget.bus.id ?? ''));
+                        ref.invalidate(busPaginatedTripsProvider(
+                            PaginatedTripsRequest(entityId: widget.bus.id ?? '')));
                         ref.invalidate(driverTripsProvider(selectedDriver!.id));
+                        ref.invalidate(driverTripsLimitedProvider(selectedDriver!.id));
+                        ref.invalidate(driverPaginatedTripsProvider(
+                            PaginatedTripsRequest(entityId: selectedDriver!.id)));
                         if (widget.tripToEdit != null && widget.tripToEdit!.driverId != selectedDriver!.id) {
                           ref.invalidate(driverTripsProvider(widget.tripToEdit!.driverId));
+                          ref.invalidate(driverTripsLimitedProvider(widget.tripToEdit!.driverId));
+                          ref.invalidate(driverPaginatedTripsProvider(
+                              PaginatedTripsRequest(entityId: widget.tripToEdit!.driverId)));
                         }
                         if (selectedFactory != null) {
                           ref.invalidate(
                               factoryTripsProvider(selectedFactory!.id));
+                          ref.invalidate(
+                              factoryTripsLimitedProvider(selectedFactory!.id));
+                          ref.invalidate(
+                              factoryPaginatedTripsProvider(
+                                  PaginatedTripsRequest(entityId: selectedFactory!.id)));
                           ref.invalidate(factoriesProvider);
                         }
                         if (widget.tripToEdit?.factoryId != null) {
                           ref.invalidate(
                               factoryTripsProvider(widget.tripToEdit!.factoryId!));
+                          ref.invalidate(
+                              factoryTripsLimitedProvider(widget.tripToEdit!.factoryId!));
+                          ref.invalidate(
+                              factoryPaginatedTripsProvider(
+                                  PaginatedTripsRequest(entityId: widget.tripToEdit!.factoryId!)));
                         }
                         ref.invalidate(driversProvider);
                         ref.invalidate(busProvider);

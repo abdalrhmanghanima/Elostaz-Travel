@@ -1,4 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elostaz_travel/data/trip/model/trip_model.dart';
+import 'package:elostaz_travel/domain/trip/repository/trip_repository.dart'
+    show TripListFilter;
+
+class PaginatedTripsResult {
+  final List<TripModel> trips;
+  final DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  final bool hasMore;
+
+  const PaginatedTripsResult({
+    required this.trips,
+    this.lastDocument,
+    required this.hasMore,
+  });
+}
 
 abstract class TripRemoteDataSource {
   Future<void> addTrip(TripModel trip);
@@ -21,4 +36,48 @@ abstract class TripRemoteDataSource {
     required int year,
     required int month,
   });
+
+  Future<List<TripModel>> getBusTripsLimited(String busId, int limit);
+
+  Future<List<TripModel>> getDriverTripsLimited(String driverId, int limit);
+
+  Future<List<TripModel>> getFactoryTripsLimited(String factoryId, int limit);
+
+  Future<PaginatedTripsResult> getBusTripsPaginated(
+    String busId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  );
+
+  Future<PaginatedTripsResult> getDriverTripsPaginated(
+    String driverId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  );
+
+  Future<PaginatedTripsResult> getFactoryTripsPaginated(
+    String factoryId,
+    int limit,
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    TripListFilter filter,
+  );
+
+  /// Returns ALL matching bus trips for [filter] (print/report flow). The
+  /// implementation iterates all matching documents internally in batches.
+  Future<List<TripModel>> getBusTripsForReport(
+    String busId,
+    TripListFilter filter,
+  );
+
+  Future<List<TripModel>> getDriverTripsForReport(
+    String driverId,
+    TripListFilter filter,
+  );
+
+  Future<List<TripModel>> getFactoryTripsForReport(
+    String factoryId,
+    TripListFilter filter,
+  );
 }

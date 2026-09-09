@@ -61,7 +61,7 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
     }
 
     final tripsState = ref.watch(
-      factoryTripsProvider(currentFactory.id),
+      factoryTripsLimitedProvider(currentFactory.id),
     );
 
     return Scaffold(
@@ -178,10 +178,10 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
         color: AppColors.primary,
         backgroundColor: AppColors.white,
         onRefresh: () async {
-          ref.invalidate(factoryTripsProvider(currentFactory.id));
+          ref.invalidate(factoryTripsLimitedProvider(currentFactory.id));
           await Future.wait([
             ref.read(factoriesProvider.notifier).getFactories(),
-            ref.read(factoryTripsProvider(currentFactory.id).future),
+            ref.read(factoryTripsLimitedProvider(currentFactory.id).future),
           ]);
         },
         child: tripsState.when(
