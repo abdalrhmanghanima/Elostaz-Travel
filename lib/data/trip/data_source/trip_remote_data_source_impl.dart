@@ -263,7 +263,20 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
     } catch (e, stackTrace) {
       print('BUS TRIPS ERROR: $e');
       print(stackTrace);
-      rethrow;
+      // If composite index is pending, fallback to query by busId and sort in memory
+      try {
+        final fallbackSnapshot = await _trips()
+            .where('busId', isEqualTo: busId)
+            .get();
+
+        final trips = fallbackSnapshot.docs
+            .map((doc) => TripModel.fromFirestore(doc))
+            .toList();
+        trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return trips;
+      } catch (_) {
+        rethrow;
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:elostaz_travel/core/services/license_notification_service.dart';
 import 'package:elostaz_travel/core/utils/app_colors.dart';
 import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/presentation/home/provider/bottom_nav_provider.dart';
+import 'package:elostaz_travel/presentation/home/widgets/animated_nav_bar_icon.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/bus_tab.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/provider/bus_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/driver_tab.dart';
@@ -93,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BottomNavigationBarItem(
                   icon: Transform.translate(
                     offset: Offset(0, -1.h),
-                    child: _AnimatedNavBarIcon(
+                    child: AnimatedNavBarIcon(
                       assetName: AppIcons.home,
                       filledAssetName: AppIcons.homeFilled,
                       isSelected: currentScreen == 0,
@@ -104,7 +105,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BottomNavigationBarItem(
                   icon: Transform.translate(
                     offset: Offset(0, -1.h),
-                    child: _AnimatedNavBarIcon(
+                    child: AnimatedNavBarIcon(
                       assetName: AppIcons.bus,
                       filledAssetName: AppIcons.busFilled,
                       isSelected: currentScreen == 1,
@@ -115,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BottomNavigationBarItem(
                   icon: Transform.translate(
                     offset: Offset(0, -1.h),
-                    child: _AnimatedNavBarIcon(
+                    child: AnimatedNavBarIcon(
                       assetName: AppIcons.person,
                       filledAssetName: AppIcons.personFilled,
                       isSelected: currentScreen == 2,
@@ -126,7 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BottomNavigationBarItem(
                   icon: Transform.translate(
                     offset: Offset(0, -1.h),
-                    child: _AnimatedNavBarIcon(
+                    child: AnimatedNavBarIcon(
                       assetName: AppIcons.factory,
                       filledAssetName: AppIcons.factoryFilled,
                       isSelected: currentScreen == 3,
@@ -137,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BottomNavigationBarItem(
                   icon: Transform.translate(
                     offset: Offset(0, -1.h),
-                    child: _AnimatedNavBarIcon(
+                    child: AnimatedNavBarIcon(
                       assetName: AppIcons.notification,
                       filledAssetName: AppIcons.notificationFilled,
                       isSelected: currentScreen == 4,
@@ -150,65 +151,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _AnimatedNavBarIcon extends StatelessWidget {
-  final String assetName;
-  final String filledAssetName;
-  final bool isSelected;
-
-  const _AnimatedNavBarIcon({
-    required this.assetName,
-    required this.filledAssetName,
-    required this.isSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOutCubic,
-      tween: Tween<double>(end: isSelected ? 1.0 : 0.0),
-      builder: (context, progress, child) {
-        final scale = 1.0 + (0.10 * progress);
-
-        return Transform.scale(
-          scale: scale,
-          child: SizedBox(
-            height: 24.w,
-            width: 24.w,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Outline icon — fades out when selected
-                Opacity(
-                  opacity: 1.0 - progress,
-                  child: SvgPicture.asset(
-                    assetName,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.black,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-                // Filled icon — fades in when selected
-                Opacity(
-                  opacity: progress,
-                  child: SvgPicture.asset(
-                    filledAssetName,
-                    colorFilter: ColorFilter.mode(
-                      AppColors.primary,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

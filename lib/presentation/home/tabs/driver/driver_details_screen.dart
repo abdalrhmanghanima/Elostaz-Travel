@@ -25,6 +25,10 @@ import 'package:elostaz_travel/presentation/home/tabs/all_trips/all_trips_page.d
 import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/edit_driver_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/pay_driver_wage_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/section_header.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/document_image_card.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/advance_card.dart';
+import 'package:elostaz_travel/presentation/home/tabs/driver/widgets/driver_stat_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -317,21 +321,21 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: _DriverStatItem(
+                              child: DriverStatItem(
                                 title: 'الرحلات',
                                 value: '$tripsCount',
                               ),
                             ),
                             SizedBox(width: 8.w),
                             Expanded(
-                              child: _DriverStatItem(
+                              child: DriverStatItem(
                                 title: 'السهرات',
                                 value: '$nightOutingsCount',
                               ),
                             ),
                             SizedBox(width: 8.w),
                             Expanded(
-                              child: _DriverStatItem(
+                              child: DriverStatItem(
                                 title: 'إجمالي الإيرادات',
                                 value: '${totalRev.toStringAsFixed(0)} ج.م',
                               ),
@@ -389,7 +393,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                   SizedBox(height: 24.h),
 
                   // ─── Driver Documents ───────────────────────────────────
-                  _SectionHeader(title: 'وثائق السواق'),
+                  SectionHeader(title: 'وثائق السواق'),
 
                   SizedBox(height: 14.h),
 
@@ -399,7 +403,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                     data: (images) => Row(
                       children: [
                         Expanded(
-                          child: _DocumentImageCard(
+                          child: DocumentImageCard(
                             label: 'صورة البطاقة',
                             icon: Icons.badge_outlined,
                             imageFile: images.idCardImage,
@@ -413,7 +417,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                         ),
                         SizedBox(width: 12.w),
                         Expanded(
-                          child: _DocumentImageCard(
+                          child: DocumentImageCard(
                             label: 'رخصة القيادة',
                             icon: Icons.drive_eta_outlined,
                             imageFile: images.licenseImage,
@@ -431,7 +435,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
 
                   // SizedBox(height: 24.h),
                   //
-                  // _SectionHeader(title: 'سجل الأجور المستحقة'),
+                  // SectionHeader(title: 'سجل الأجور المستحقة'),
                   // SizedBox(height: 14.h),
                   // _AccruedWagesHistory(
                   //   trips: trips,
@@ -440,7 +444,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                   //
                   // SizedBox(height: 24.h),
                   //
-                  // _SectionHeader(title: 'سجل تسديد الأجور'),
+                  // SectionHeader(title: 'سجل تسديد الأجور'),
                   // SizedBox(height: 14.h),
                   // _WagePaymentsHistory(payments: wagePayments),
 
@@ -490,7 +494,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                           ),
                         ),
                       ),
-                      _SectionHeader(title: 'السلف المستحقة'),
+                      SectionHeader(title: 'السلف المستحقة'),
                     ],
                   ),
 
@@ -577,7 +581,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                             separatorBuilder: (_, _) => SizedBox(height: 10.h),
                             itemBuilder: (context, index) {
                               final advance = active[index];
-                              return _AdvanceCard(
+                              return AdvanceCard(
                                 advance: advance,
                                 driverId: currentDriver.id,
                               );
@@ -611,7 +615,7 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
                           decoration: TextDecoration.underline,
                         ),
                       ),
-                      _SectionHeader(title: 'رحلات السواق'),
+                      SectionHeader(title: 'رحلات السواق'),
                     ],
                   ),
 
@@ -721,717 +725,6 @@ class _DriverDetailsScreenState extends ConsumerState<DriverDetailsScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section Header
-// ─────────────────────────────────────────────────────────────────────────────
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomText(
-      title: title,
-      fontSize: 19.sp,
-      fontWeight: FontWeight.w700,
-      fontColor: AppColors.primary,
-      textAlign: TextAlign.right,
-    );
-  }
-}
-
-class _DriverWageSummary extends StatelessWidget {
-  final DriverWageBalance balance;
-  final VoidCallback onAddWage;
-  final VoidCallback onPayWage;
-
-  const _DriverWageSummary({
-    required this.balance,
-    required this.onAddWage,
-    required this.onPayWage,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final canPay = balance.remaining > 0;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFFDE68A)),
-      ),
-      child: Column(
-        children: [
-          _WageSummaryRow(
-            label: 'إجمالي الأجر المستحق',
-            value: balance.totalAccrued,
-          ),
-          SizedBox(height: 8.h),
-          _WageSummaryRow(
-            label: 'تم تسديده',
-            value: balance.totalPaid,
-          ),
-          SizedBox(height: 8.h),
-          _WageSummaryRow(
-            label: 'المتبقي للسائق',
-            value: balance.remaining,
-            emphasize: true,
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            children: [
-              Expanded(
-                child: _WageActionButton(
-                  title: 'إضافة أجر',
-                  icon: Icons.add,
-                  enabled: true,
-                  onTap: onAddWage,
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: _WageActionButton(
-                  title: 'تسديد أجر السائق',
-                  icon: Icons.payments_outlined,
-                  enabled: canPay,
-                  onTap: onPayWage,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WageSummaryRow extends StatelessWidget {
-  final String label;
-  final double value;
-  final bool emphasize;
-
-  const _WageSummaryRow({
-    required this.label,
-    required this.value,
-    this.emphasize = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        CustomText(
-          title: '${value.toStringAsFixed(0)} ج.م',
-          fontSize: emphasize ? 16.sp : 14.sp,
-          fontWeight: FontWeight.w800,
-          fontColor: const Color(0xFFB45309),
-        ),
-        CustomText(
-          title: label,
-          fontSize: 13.sp,
-          fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
-          fontColor: const Color(0xFF92400E),
-        ),
-      ],
-    );
-  }
-}
-
-class _WageActionButton extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _WageActionButton({
-    required this.title,
-    required this.icon,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: enabled
-              ? AppColors.primary
-              : AppColors.primary.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 15.sp),
-            SizedBox(width: 4.w),
-            Flexible(
-              child: CustomText(
-                title: title,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w700,
-                fontColor: Colors.white,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AccruedWagesHistory extends StatelessWidget {
-  final List<TripEntity> trips;
-  final List<DriverWageEntryEntity> entries;
-
-  const _AccruedWagesHistory({
-    required this.trips,
-    required this.entries,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final items = <({DateTime date, double amount, String label, String notes})>[
-      ...trips
-          .where((t) => t.driverWage != null && t.driverWage! > 0)
-          .map(
-            (t) => (
-        date: t.effectiveDate,
-        amount: t.driverWage!,
-        label: t.isNightOuting ? 'سهرة' : 'رحلة',
-        notes: t.details,
-        ),
-      ),
-      ...entries.map(
-            (e) => (
-        date: e.date,
-        amount: e.amount,
-        label: 'أجر إضافي',
-        notes: e.notes,
-        ),
-      ),
-    ]..sort((a, b) => b.date.compareTo(a.date));
-
-    if (items.isEmpty) {
-      return _EmptyWageBox(title: 'لا توجد أجور مستحقة مسجلة');
-    }
-
-    return Column(
-      children: items
-          .map(
-            (item) => Padding(
-          padding: EdgeInsets.only(bottom: 8.h),
-          child: _WageHistoryRow(
-            date: item.date,
-            amount: item.amount,
-            notes: item.notes.isEmpty ? item.label : '${item.label} • ${item.notes}',
-          ),
-        ),
-      )
-          .toList(),
-    );
-  }
-}
-
-class _WagePaymentsHistory extends StatelessWidget {
-  final List<DriverWagePaymentEntity> payments;
-
-  const _WagePaymentsHistory({required this.payments});
-
-  @override
-  Widget build(BuildContext context) {
-    if (payments.isEmpty) {
-      return _EmptyWageBox(title: 'لا يوجد سجل تسديد');
-    }
-
-    final sorted = [...payments]..sort((a, b) => b.date.compareTo(a.date));
-    return Column(
-      children: sorted
-          .map(
-            (p) => Padding(
-          padding: EdgeInsets.only(bottom: 8.h),
-          child: _WageHistoryRow(
-            date: p.date,
-            amount: p.amount,
-            notes: p.notes,
-          ),
-        ),
-      )
-          .toList(),
-    );
-  }
-}
-
-class _EmptyWageBox extends StatelessWidget {
-  final String title;
-
-  const _EmptyWageBox({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 20.h),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundGray,
-        borderRadius: BorderRadius.circular(14.r),
-      ),
-      child: Center(
-        child: CustomText(
-          title: title,
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w500,
-          fontColor: const Color(0xFF999999),
-        ),
-      ),
-    );
-  }
-}
-
-class _WageHistoryRow extends StatelessWidget {
-  final DateTime date;
-  final double amount;
-  final String notes;
-
-  const _WageHistoryRow({
-    required this.date,
-    required this.amount,
-    required this.notes,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE7E8EC)),
-      ),
-      child: Row(
-        children: [
-          CustomText(
-            title: '${amount.toStringAsFixed(0)} ج.م',
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            fontColor: AppColors.primary,
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: CustomText(
-              title: notes.isEmpty ? '-' : notes,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-              fontColor: const Color(0xFF666A73),
-              textAlign: TextAlign.right,
-            ),
-          ),
-          SizedBox(width: 10.w),
-          CustomText(
-            title: AppDateFormatter.format(date),
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            fontColor: const Color(0xFF444444),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Document Image Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _DocumentImageCard extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final File? imageFile;
-  final String? imageUrl;
-  final VoidCallback onTapUpload;
-
-  const _DocumentImageCard({
-    required this.label,
-    required this.icon,
-    this.imageFile,
-    this.imageUrl,
-    required this.onTapUpload,
-  });
-
-  bool get _hasImage =>
-      imageFile != null || (imageUrl != null && imageUrl!.isNotEmpty);
-
-  void _showImageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: EdgeInsets.all(16.w),
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                child: imageFile != null
-                    ? Image.file(
-                  imageFile!,
-                  fit: BoxFit.contain,
-                )
-                    : CachedNetworkImage(
-                  imageUrl: imageUrl!,
-                  fit: BoxFit.contain,
-                  placeholder: (_, _) => const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                  errorWidget: (_, _, _) => const Icon(
-                    Icons.broken_image,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8.h,
-              left: 8.w,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _hasImage ? () => _showImageDialog(context) : onTapUpload,
-      child: Container(
-        height: 130.h,
-        decoration: BoxDecoration(
-          color: AppColors.backgroundGray,
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(
-            color: _hasImage
-                ? AppColors.primary.withValues(alpha: 0.25)
-                : const Color(0xFFE0E0E0),
-          ),
-        ),
-        child: _hasImage
-            ? ClipRRect(
-          borderRadius: BorderRadius.circular(13.r),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              imageFile != null
-                  ? Image.file(
-                imageFile!,
-                fit: BoxFit.cover,
-              )
-                  : CachedNetworkImage(
-                imageUrl: imageUrl!,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                errorWidget: (_, _, _) => const Icon(
-                  Icons.broken_image,
-                  color: Colors.grey,
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 6.h,
-                    horizontal: 8.w,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.65),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CustomText(
-                        title: label,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        fontColor: Colors.white,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 6.h,
-                left: 6.w,
-                child: GestureDetector(
-                  onTap: onTapUpload,
-                  child: Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.edit_outlined,
-                      size: 14.sp,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )
-            : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 34.sp,
-              color: const Color(0xFFBFC3CB),
-            ),
-            SizedBox(height: 8.h),
-            CustomText(
-              title: label,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-              fontColor: const Color(0xFF777B85),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 4.h),
-            CustomText(
-              title: 'اضغط للرفع',
-              fontSize: 11.sp,
-              fontColor: AppColors.primary,
-              fontWeight: FontWeight.w600,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Advance Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _AdvanceCard extends ConsumerWidget {
-  final DriverAdvanceEntity advance;
-  final String driverId;
-
-  const _AdvanceCard({required this.advance, required this.driverId});
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: const Color(0xFFE7E8EC)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Mark as paid button
-              TextButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text(
-                        'تأكيد السداد',
-                        textAlign: TextAlign.right,
-                        textDirection: TextDirection.rtl,
-                      ),
-                      content: Text(
-                        'هل تم سداد هذه السلفة (${advance.amount.toStringAsFixed(0)} ج.م)؟',
-                        textAlign: TextAlign.right,
-                        textDirection: TextDirection.rtl,
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('إلغاء'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.green,
-                          ),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(
-                            'تم السداد',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirmed == true) {
-                    await ref
-                        .read(driverAdvanceNotifierProvider.notifier)
-                        .markAdvancePaid(
-                      driverId: driverId,
-                      advanceId: advance.id,
-                    );
-                  }
-                },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
-                  ),
-                  backgroundColor: AppColors.lightGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                ),
-                child: CustomText(
-                  title: 'تم السداد ✓',
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  fontColor: AppColors.green,
-                ),
-              ),
-
-              // Amount
-              CustomText(
-                title: '${advance.amount.toStringAsFixed(0)} ج.م',
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w800,
-                fontColor: AppColors.primary,
-              ),
-            ],
-          ),
-
-          SizedBox(height: 6.h),
-
-          // Date
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              CustomText(
-                title: _formatDate(advance.date),
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
-                fontColor: const Color(0xFF666A73),
-              ),
-              SizedBox(width: 4.w),
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 13.sp,
-                color: const Color(0xFF666A73),
-              ),
-            ],
-          ),
-
-          if (advance.note.isNotEmpty) ...[
-            SizedBox(height: 6.h),
-            CustomText(
-              title: advance.note,
-              fontSize: 13.sp,
-              fontColor: const Color(0xFF777B85),
-              textAlign: TextAlign.right,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Driver Stat Item
-// ─────────────────────────────────────────────────────────────────────────────
-class _DriverStatItem extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const _DriverStatItem({
-    required this.title,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: 8.w,
-        vertical: 10.h,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundGray,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CustomText(
-            title: title,
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w600,
-            fontColor: const Color(0xFF666A73),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 5.h),
-          CustomText(
-            title: value,
-            fontSize: 17.sp,
-            fontWeight: FontWeight.w800,
-            fontColor: AppColors.primary,
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }

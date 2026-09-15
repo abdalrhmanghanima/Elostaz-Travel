@@ -5,6 +5,7 @@ import 'package:elostaz_travel/domain/bus/entity/bus_entity.dart';
 import 'package:elostaz_travel/domain/driver/entity/driver_entity.dart';
 import 'package:elostaz_travel/domain/factory/entity/factory_entity.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
+import 'package:elostaz_travel/domain/trip/validation/trip_date_rule.dart';
 import 'package:elostaz_travel/presentation/components/custom_button/custom_button.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/components/inputs/custom_text_form.dart';
@@ -429,11 +430,18 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
 
                   InkWell(
                     onTap: () async {
+                      final now = DateTime.now();
+                      final today = DateTime(now.year, now.month, now.day);
+                      var initial = selectedDate ?? today;
+                      if (initial.isAfter(today)) initial = today;
+                      if (initial.isBefore(DateTime(2020))) {
+                        initial = DateTime(2020);
+                      }
                       final picked = await AppDatePicker.show(
                         context,
-                        initialDate: selectedDate ?? DateTime.now(),
+                        initialDate: initial,
                         firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
+                        lastDate: today,
                         helpText: 'اختر تاريخ الرحلة',
                       );
                       if (picked != null) {
@@ -702,6 +710,17 @@ class _AddTripBottomSheetState extends ConsumerState<AddTripBottomSheet> {
                     onTap: () async {
                       if (!formKey.currentState!.validate()) {
                         return;
+                      }
+
+                      if (selectedDate != null) {
+                        final dateError =
+                            TripDateRule.errorFor(selectedDate!);
+                        if (dateError != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(dateError)),
+                          );
+                          return;
+                        }
                       }
 
                       final revenue =

@@ -24,6 +24,8 @@ import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_paginated_
 import 'package:elostaz_travel/domain/trip/use_case/get_bus_trips_for_report_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_driver_trips_for_report_use_case.dart';
 import 'package:elostaz_travel/domain/trip/use_case/get_factory_trips_for_report_use_case.dart';
+import 'package:elostaz_travel/presentation/home/tabs/trip/provider/trip_provider.dart'
+    as home_trip;
 
 final tripRemoteDataSourceProvider =
 Provider<TripRemoteDataSource>((ref) {
@@ -153,9 +155,10 @@ class TripNotifier extends AsyncNotifier<void> {
   Future<bool> addTrip(TripEntity trip) async {
     state = const AsyncLoading();
 
-    final result = await AsyncValue.guard(
-          () => ref.read(addTripUseCaseProvider).call(trip),
-    );
+    final result = await AsyncValue.guard(() async {
+      await ref.read(addTripUseCaseProvider).call(trip);
+      _invalidateTripAggregates();
+    });
 
     state = result;
 
@@ -165,9 +168,10 @@ class TripNotifier extends AsyncNotifier<void> {
   Future<bool> updateTrip(TripEntity trip) async {
     state = const AsyncLoading();
 
-    final result = await AsyncValue.guard(
-          () => ref.read(updateTripUseCaseProvider).call(trip),
-    );
+    final result = await AsyncValue.guard(() async {
+      await ref.read(updateTripUseCaseProvider).call(trip);
+      _invalidateTripAggregates();
+    });
 
     state = result;
 
@@ -177,13 +181,23 @@ class TripNotifier extends AsyncNotifier<void> {
   Future<bool> deleteTrip(String tripId) async {
     state = const AsyncLoading();
 
-    final result = await AsyncValue.guard(
-          () => ref.read(deleteTripUseCaseProvider).call(tripId),
-    );
+    final result = await AsyncValue.guard(() async {
+      await ref.read(deleteTripUseCaseProvider).call(tripId);
+      _invalidateTripAggregates();
+    });
 
     state = result;
 
     return !result.hasError;
+  }
+
+  /// Home dashboard/company summary read the trip count + revenue from the
+  /// cached [home_trip.monthlyTripsProvider]/[home_trip.allTripsProvider].
+  /// These cache the aggregate forever unless invalidated, so every successful
+  /// trip write must refresh them or the latest trip never shows on Home.
+  void _invalidateTripAggregates() {
+    ref.invalidate(home_trip.monthlyTripsProvider);
+    ref.invalidate(home_trip.allTripsProvider);
   }
 }
 

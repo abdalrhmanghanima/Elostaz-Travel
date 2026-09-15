@@ -626,39 +626,52 @@ class _AddBusScreenState extends ConsumerState<AddBusScreen> {
                       insuranceType: ref.read(insuranceTypeProvider),
                     );
 
+                    final messenger = ScaffoldMessenger.of(context);
+
                     await ref.read(busProvider.notifier).addBus(
                       bus: bus,
                     );
 
                     final state = ref.read(busProvider);
-                    if (!state.hasError) {
-                      final busPhotoXFile = ref.read(
-                        documentImageProvider(
-                          (busId: busId, documentType: 'bus_photo'),
-                        ),
-                      );
-                      final licenseXFile = ref.read(
-                        documentImageProvider(
-                          (busId: busId, documentType: 'bus_license'),
-                        ),
-                      );
-
-                      if (busPhotoXFile != null) {
-                        await BusLocalImageService.instance.saveBusImage(
-                          busId,
-                          File(busPhotoXFile.path),
+                    if (state.hasError) {
+                      if (mounted) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'حدث خطأ أثناء حفظ البيانات. حاول مرة أخرى.',
+                            ),
+                          ),
                         );
                       }
-                      if (licenseXFile != null) {
-                        await BusLocalImageService.instance.saveLicenseImage(
-                          busId,
-                          File(licenseXFile.path),
-                        );
-                      }
-
-                      await LicenseNotificationService.instance
-                          .scheduleBusLicenseNotifications(bus);
+                      return;
                     }
+
+                    final busPhotoXFile = ref.read(
+                      documentImageProvider(
+                        (busId: busId, documentType: 'bus_photo'),
+                      ),
+                    );
+                    final licenseXFile = ref.read(
+                      documentImageProvider(
+                        (busId: busId, documentType: 'bus_license'),
+                      ),
+                    );
+
+                    if (busPhotoXFile != null) {
+                      await BusLocalImageService.instance.saveBusImage(
+                        busId,
+                        File(busPhotoXFile.path),
+                      );
+                    }
+                    if (licenseXFile != null) {
+                      await BusLocalImageService.instance.saveLicenseImage(
+                        busId,
+                        File(licenseXFile.path),
+                      );
+                    }
+
+                    await LicenseNotificationService.instance
+                        .scheduleBusLicenseNotifications(bus);
 
                     if (mounted) {
                       NavigatorHandler.pop();

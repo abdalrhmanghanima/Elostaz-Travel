@@ -5,6 +5,7 @@ import 'package:elostaz_travel/core/utils/app_icons.dart';
 import 'package:elostaz_travel/core/utils/custom_loading.dart';
 import 'package:elostaz_travel/domain/factory/entity/factory_entity.dart';
 import 'package:elostaz_travel/domain/trip/entity/trip_entity.dart';
+
 import 'package:elostaz_travel/presentation/components/custom_app_bar/custom_app_bar.dart';
 import 'package:elostaz_travel/presentation/components/custom_text/custom_text.dart';
 import 'package:elostaz_travel/presentation/home/tabs/bus/widgets/trip_card.dart';
@@ -12,6 +13,7 @@ import 'package:elostaz_travel/presentation/home/tabs/factory/add_factory_screen
 import 'package:elostaz_travel/presentation/home/tabs/factory/provider/factory_provider.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/add_factory_trip_bottom_sheet.dart';
 import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/factory_action_bottom_sheet.dart';
+import 'package:elostaz_travel/presentation/home/tabs/factory/widgets/factory_stat_item.dart';
 import 'package:elostaz_travel/presentation/home/tabs/all_trips/all_trips_page.dart';
 import 'package:elostaz_travel/presentation/trip/provider/trip_provider.dart';
 import 'package:flutter/material.dart';
@@ -335,7 +337,7 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: _FactoryStatItem(
+                              child: FactoryStatItem(
                                 title: 'الرحلات',
                                 value: '$tripsCount',
                                 icon: Icons.directions_bus_rounded,
@@ -344,7 +346,7 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                             ),
                             SizedBox(width: 8.w),
                             Expanded(
-                              child: _FactoryStatItem(
+                              child: FactoryStatItem(
                                 title: 'السهرات',
                                 value: '$nightOutingsCount',
                                 icon: Icons.nightlight_round,
@@ -353,7 +355,7 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                             ),
                             SizedBox(width: 8.w),
                             Expanded(
-                              child: _FactoryStatItem(
+                              child: FactoryStatItem(
                                 title: 'إجمالي الإيراد',
                                 value: '${totalRev.toStringAsFixed(0)} ج.م',
                                 icon: Icons.attach_money_rounded,
@@ -362,7 +364,7 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
                             ),
                             SizedBox(width: 8.w),
                             Expanded(
-                              child: _FactoryStatItem(
+                              child: FactoryStatItem(
                                 title: 'الصافي',
                                 value: '${totalNet.toStringAsFixed(0)} ج.م',
                                 icon: Icons.account_balance_wallet_outlined,
@@ -664,62 +666,6 @@ class _FactoryDetailsScreenState extends ConsumerState<FactoryDetailsScreen> {
             textAlign: TextAlign.center,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _FactoryStatItem extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-
-  const _FactoryStatItem({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 4.w,
-        vertical: 8.h,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundGray,
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14.sp,
-            color: iconColor,
-          ),
-          SizedBox(height: 3.h),
-          CustomText(
-            title: title,
-            fontSize: 9.5.sp,
-            fontWeight: FontWeight.w600,
-            fontColor: const Color(0xFF666A73),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-          ),
-          SizedBox(height: 3.h),
-          CustomText(
-            title: value,
-            fontSize: 12.5.sp,
-            fontWeight: FontWeight.w800,
-            fontColor: AppColors.black,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-          ),
-        ],
       ),
     );
   }

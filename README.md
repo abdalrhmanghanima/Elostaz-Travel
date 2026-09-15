@@ -1,3 +1,4 @@
+````
 # Elostaz Travel 🚌
 
 A modern Flutter-based transportation management application designed to
@@ -18,7 +19,9 @@ The application allows authorized users to:
 
 -   Manage buses and their complete vehicle information.
 -   Manage drivers and their personal/work information.
+-   Manage factories and factory-related trips.
 -   Add and manage trips.
+-   Use the AI Assistant for operational actions, queries, and analytics.
 -   Track trip revenue and financial data.
 -   View financial summaries and reports.
 -   Monitor vehicle-related notifications.
@@ -280,7 +283,37 @@ operational information.
 
 ### Home --- Additional View
 
-<img src="assets/readme/rest-of-home.jpg" width="48%">
+<img src="assets/readme/restofhome.jpg" width="48%">
+
+---
+
+### 🤖 AI Assistant
+
+The application includes an AI Assistant available directly from the Home screen.
+
+The assistant provides a conversational interface for common transportation-management tasks, including:
+
+- Add a bus trip.
+- Add a factory trip.
+- Add a bus.
+- Add a driver.
+- Add a factory.
+- Query trips, buses, drivers, and factories.
+- Ask operational and financial questions such as trip counts, bus revenue, driver trip activity, driver wages, factory trips, and total revenue.
+- Resolve buses by name or plate number.
+- Resolve drivers and factories against existing application data.
+- Request the available assistant actions again when needed.
+- Voice input through speech recognition with editable text before sending.
+
+The AI Assistant reuses the application's existing business logic and data providers instead of writing directly to Firebase.
+
+<img src="assets/readme/aiassistant.jpg" width="48%">
+
+### AI Assistant — Additional View
+
+<img src="assets/readme/restofaiassistant.jpg" width="48%">
+
+---
 
 ------------------------------------------------------------------------
 
@@ -288,43 +321,47 @@ operational information.
 
 ### Bus Screen
 
-<img src="assets/readme/bus-screen.jpg" width="48%">
+<img src="assets/readme/bustab.jpg" width="48%">
 
 ### Add Bus Screen
 
-<img src="assets/readme/add-bus-screen.jpg" width="48%">
+<img src="assets/readme/addcarscreen.jpg" width="48%">
 
 ### Add Bus --- Additional Section
 
-<img src="assets/readme/rest-of-add-bus.jpg" width="48%">
+<img src="assets/readme/restofaddcarscreen.jpg" width="48%">
 
 ### Add Bus --- Additional Section 2
 
-<img src="assets/readme/rest-of-add-bus-sec.jpg" width="48%">
+<img src="assets/readme/restofaddcarscreen2.jpg" width="48%">
 
-### Add Bus Bottom Sheet
+### Add Trip Bottom Sheet
 
-<img src="assets/readme/add-bus-bottom-sheet.jpg" width="48%">
+<img src="assets/readme/addtripbottomsheet.jpg" width="48%">
+
+### Add Trip Bottom Sheet — Additional View
+
+<img src="assets/readme/restofaddtripbottomsheet.jpg" width="48%">
 
 ### Bus Details
 
-<img src="assets/readme/bus-details.jpg" width="48%">
+<img src="assets/readme/busdetails.jpg" width="48%">
 
 ### Bus Details --- Additional Section
 
-<img src="assets/readme/rest-of-bus-details.jpg" width="48%">
+<img src="assets/readme/restofbusdetails.jpg" width="48%">
 
 ### Bus Details --- Additional Section 2
 
-<img src="assets/readme/rest-of-bus-details-sec.jpg" width="48%">
+<img src="assets/readme/caractionsbottomsheet.jpg" width="48%">
 
 ### Edit Bus Bottom Sheet
 
-<img src="assets/readme/edit-bus-bottom-sheet.jpg" width="48%">
+<img src="assets/readme/editbusdetails.jpg" width="48%">
 
 ### Add/Edit Bus Image Selection
 
-<img src="assets/readme/add-edit-bus-bottom-sheet.jpg" width="48%">
+<img src="assets/readme/caractionsbottomsheet.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -332,23 +369,54 @@ operational information.
 
 ### Drivers Screen
 
-<img src="assets/readme/drivers-screen.jpg" width="48%">
+<img src="assets/readme/drivetab.jpg" width="48%">
 
 ### Add Driver Bottom Sheet
 
-<img src="assets/readme/add-driver-bottom-sheet.jpg" width="48%">
+<img src="assets/readme/adddriver.jpg" width="48%">
 
 ### Driver Details
 
-<img src="assets/readme/driver-details.jpg" width="48%">
+<img src="assets/readme/driverdetails.jpg" width="48%">
 
 ------------------------------------------------------------------------
+
+# 🏭 Factory Management
+
+Factory management is supported as part of the transportation workflow.
+
+It includes:
+
+- Add factories.
+- View factory information.
+- Manage factory-related trip records.
+- Create factory trips through the AI Assistant.
+- Support factory trip types such as regular trips and evening outings.
+- Connect factory trips with the selected bus and driver.
+
+### Add Factory Bottom Sheet
+
+<img src="assets/readme/addfactory.jpg" width="48%">
+
+### Factories Screen
+
+<img src="assets/readme/factorytab.jpg" width="48%">
+
+### Factory Details
+
+<img src="assets/readme/factorydetails.jpg" width="48%">
+
+### Factory Trips
+
+<img src="assets/readme/factoryalltrips.jpg" width="48%">
+
+---
 
 # 🛣️ Trips
 
 ### Trips Screen
 
-<img src="assets/readme/trips-screen.jpg" width="48%">
+<img src="assets/readme/busalltrips.jpg" width="48%">
 
 Trip management connects operational records with the selected bus and
 driver and provides a history of recorded trips and their financial
@@ -360,11 +428,11 @@ values.
 
 ### All Notifications
 
-<img src="assets/readme/all-notifications.jpg" width="48%">
+<img src="assets/readme/notificationtab.jpg" width="48%">
 
 ### Ongoing Notifications
 
-<img src="assets/readme/ongoing-notifications.jpg" width="48%">
+<img src="assets/readme/notificationtab.jpg" width="48%">
 
 The notification area provides a centralized place to review operational
 alerts and important vehicle-related reminders.
@@ -375,11 +443,11 @@ alerts and important vehicle-related reminders.
 
 ### Financial Summary
 
-<img src="assets/readme/financial-summary.jpg" width="48%">
+<img src="assets/readme/financialsummary.jpg" width="48%">
 
 ### Financial Summary --- Additional View
 
-<img src="assets/readme/rest-of-financial-summary.jpg" width="48%">
+<img src="assets/readme/financialsummary.jpg" width="48%">
 
 ### Financial Summary Report
 
@@ -433,6 +501,7 @@ Examples include:
 -   Home
 -   Buses
 -   Drivers
+-   Factories
 -   Notifications
 -   Bus Details
 -   Driver Details
@@ -721,7 +790,9 @@ workflows.
 
 -   🚍 Complete bus management workflow.
 -   👨‍✈️ Driver management.
+-   🏭 Factory management.
 -   🛣️ Trip management.
+-   🤖 AI Assistant for operations, queries, and analytics.
 -   💰 Financial summaries and reports.
 -   🔔 Operational notifications.
 -   📅 License expiration tracking.
@@ -740,3 +811,5 @@ workflows.
 This project is intended for its designated business/project use.
 
 Copyright © Elostaz Travel.
+
+````
