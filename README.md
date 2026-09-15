@@ -1,4 +1,3 @@
-````
 # Elostaz Travel 🚌
 
 A modern Flutter-based transportation management application designed to
@@ -205,19 +204,19 @@ feature-specific state close to the feature that owns it.
 
 # 🛠️ Technology Stack
 
-  Technology                     Usage
+Technology                     Usage
   ------------------------------ ----------------------------------------
-  **Flutter**                    Cross-platform application development
-  **Dart**                       Programming language
-  **Riverpod**                   State management
-  **Firebase**                   Backend/application services
-  **Cloud Firestore**            Cloud data storage
-  **Firebase Cloud Messaging**   Push notification infrastructure
-  **REST APIs**                  API communication where required
-  **Image Picker**               Camera/gallery image selection
-  **Local Image Service**        Vehicle image caching
-  **Clean Architecture**         Application architecture
-  **Git / GitHub**               Version control
+**Flutter**                    Cross-platform application development
+**Dart**                       Programming language
+**Riverpod**                   State management
+**Firebase**                   Backend/application services
+**Cloud Firestore**            Cloud data storage
+**Firebase Cloud Messaging**   Push notification infrastructure
+**REST APIs**                  API communication where required
+**Image Picker**               Camera/gallery image selection
+**Local Image Service**        Vehicle image caching
+**Clean Architecture**         Application architecture
+**Git / GitHub**               Version control
 
 ------------------------------------------------------------------------
 
@@ -262,7 +261,7 @@ application.
 
 ## Splash Screen
 
-<img src="assets/readme/splash.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/splash.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -270,7 +269,7 @@ application.
 
 ### Login
 
-<img src="assets/readme/login.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/login.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -279,11 +278,11 @@ application.
 The home dashboard provides a quick overview of the most important
 operational information.
 
-<img src="assets/readme/home.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/home.jpg" width="48%">
 
 ### Home --- Additional View
 
-<img src="assets/readme/restofhome.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/restofhome.jpg" width="48%">
 
 ---
 
@@ -307,11 +306,11 @@ The assistant provides a conversational interface for common transportation-mana
 
 The AI Assistant reuses the application's existing business logic and data providers instead of writing directly to Firebase.
 
-<img src="assets/readme/aiassistant.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/aiassistant.jpg" width="48%">
 
 ### AI Assistant — Additional View
 
-<img src="assets/readme/restofaiassistant.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/restofaiassistant.jpg" width="48%">
 
 ---
 
@@ -321,47 +320,47 @@ The AI Assistant reuses the application's existing business logic and data provi
 
 ### Bus Screen
 
-<img src="assets/readme/bustab.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/bustab.jpg" width="48%">
 
 ### Add Bus Screen
 
-<img src="assets/readme/addcarscreen.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/addcarscreen.jpg" width="48%">
 
 ### Add Bus --- Additional Section
 
-<img src="assets/readme/restofaddcarscreen.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/restofaddcarscreen.jpg" width="48%">
 
 ### Add Bus --- Additional Section 2
 
-<img src="assets/readme/restofaddcarscreen2.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/restofaddcarscreen2.jpg" width="48%">
 
 ### Add Trip Bottom Sheet
 
-<img src="assets/readme/addtripbottomsheet.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/addtripbottomsheet.jpg" width="48%">
 
 ### Add Trip Bottom Sheet — Additional View
 
-<img src="assets/readme/restofaddtripbottomsheet.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/restofaddtripbottomsheet.jpg" width="48%">
 
 ### Bus Details
 
-<img src="assets/readme/busdetails.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/busdetails.jpg" width="48%">
 
 ### Bus Details --- Additional Section
 
-<img src="assets/readme/restofbusdetails.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/restofbusdetails.jpg" width="48%">
 
 ### Bus Details --- Additional Section 2
 
-<img src="assets/readme/caractionsbottomsheet.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/caractionsbottomsheet.jpg" width="48%">
 
 ### Edit Bus Bottom Sheet
 
-<img src="assets/readme/editbusdetails.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/editbusdetails.jpg" width="48%">
 
 ### Add/Edit Bus Image Selection
 
-<img src="assets/readme/caractionsbottomsheet.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/caractionsbottomsheet.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -369,15 +368,15 @@ The AI Assistant reuses the application's existing business logic and data provi
 
 ### Drivers Screen
 
-<img src="assets/readme/drivetab.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/drivetab.jpg" width="48%">
 
 ### Add Driver Bottom Sheet
 
-<img src="assets/readme/adddriver.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/adddriver.jpg" width="48%">
 
 ### Driver Details
 
-<img src="assets/readme/driverdetails.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/driverdetails.jpg" width="48%">
 
 ------------------------------------------------------------------------
 
@@ -396,19 +395,19 @@ It includes:
 
 ### Add Factory Bottom Sheet
 
-<img src="assets/readme/addfactory.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/addfactory.jpg" width="48%">
 
 ### Factories Screen
 
-<img src="assets/readme/factorytab.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/factorytab.jpg" width="48%">
 
 ### Factory Details
 
-<img src="assets/readme/factorydetails.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/factorydetails.jpg" width="48%">
 
 ### Factory Trips
 
-<img src="assets/readme/factoryalltrips.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/factoryalltrips.jpg" width="48%">
 
 ---
 
@@ -416,7 +415,7 @@ It includes:
 
 ### Trips Screen
 
-<img src="assets/readme/busalltrips.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/busalltrips.jpg" width="48%">
 
 Trip management connects operational records with the selected bus and
 driver and provides a history of recorded trips and their financial
@@ -428,11 +427,11 @@ values.
 
 ### All Notifications
 
-<img src="assets/readme/notificationtab.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/notificationtab.jpg" width="48%">
 
 ### Ongoing Notifications
 
-<img src="assets/readme/notificationtab.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/notificationtab.jpg" width="48%">
 
 The notification area provides a centralized place to review operational
 alerts and important vehicle-related reminders.
@@ -443,15 +442,15 @@ alerts and important vehicle-related reminders.
 
 ### Financial Summary
 
-<img src="assets/readme/financialsummary.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/financialsummary.jpg" width="48%">
 
 ### Financial Summary --- Additional View
 
-<img src="assets/readme/financialsummary.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/financialsummary.jpg" width="48%">
 
 ### Financial Summary Report
 
-<img src="assets/readme/financial-summary-report.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/abdalrhmanghanima/Elostaz-Travel/master/assets/readme/financial-summary-report.jpg" width="48%">
 
 The financial module organizes trip revenue into a clear structure,
 making it easier to understand the company's financial activity and
@@ -803,13 +802,3 @@ workflows.
 -   📱 Responsive Flutter UI.
 -   🧩 Reusable components.
 -   🔥 Firebase integration.
-
-------------------------------------------------------------------------
-
-## License
-
-This project is intended for its designated business/project use.
-
-Copyright © Elostaz Travel.
-
-````
